@@ -26,7 +26,9 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private val translation = PointF()
     private val cropHelper = CropHelper(context)
     private val scaleDetector = ScaleGestureDetector(context, ScaleListener())
-    private val overlay = CropOverlayView(context).apply { isClickable = false }
+    private val overlay = CropOverlayView(context).apply {
+        isClickable = false
+    }
     private val imageView = ImageView(context).apply {
         scaleType = ImageView.ScaleType.FIT_XY
         isClickable = false

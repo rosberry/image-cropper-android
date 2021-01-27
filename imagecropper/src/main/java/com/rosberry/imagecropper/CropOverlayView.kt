@@ -2,6 +2,7 @@ package com.rosberry.imagecropper
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Region
@@ -28,10 +29,10 @@ class CropOverlayView : View {
     private val frameTop get() = cropRect.top.toFloat()
     private val frameBottom get() = cropRect.bottom.toFloat()
 
-    private val frameMargin = 0
+    private val frameMargin = 100
     private val gridRowCount = 3
     private val cropRect = Rect()
-    private val overlayColor = resources.getColor(android.R.color.black, null)
+    private val overlayColor = Color.parseColor("#55000000")
     private val frameWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
     private val gridWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
     private val cropPaint = Paint().apply {
@@ -57,7 +58,7 @@ class CropOverlayView : View {
     override fun onDraw(canvas: Canvas?) {
         canvas?.apply {
             save()
-            clipRect(cropRect, Region.Op.DIFFERENCE)
+            clipOutRect(cropRect)
             drawColor(overlayColor)
             restore()
             drawFrame(this)
