@@ -106,7 +106,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         if (translation.x != closestX || translation.y != closestY) {
             AnimatorSet()
                 .apply {
-                    duration = 100
+                    duration = 200
                     playTogether(
                             ValueAnimator
                                 .ofFloat(translation.x, closestX)
@@ -121,6 +121,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
                                 .apply {
                                     addUpdateListener {
                                         translation.y = it.animatedValue as Float
+                                        update()
                                     }
                                 }
                     )
