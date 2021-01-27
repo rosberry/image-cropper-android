@@ -22,6 +22,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private val xMax: Float get() = (imageView.width / 2 * scale - overlay.frameSize / 2).coerceAtLeast(0f)
     private val yMax: Float get() = (imageView.height / 2 * scale - overlay.frameSize / 2).coerceAtLeast(0f)
 
+    private val touch = PointF()
+    private val translation = PointF()
     private val cropHelper = CropHelper(context)
     private val scaleDetector = ScaleGestureDetector(context, ScaleListener())
     private val overlay = CropOverlayView(context).apply { isClickable = false }
@@ -29,8 +31,6 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         scaleType = ImageView.ScaleType.FIT_XY
         isClickable = false
     }
-    private val touch = PointF()
-    private val translation = PointF()
 
     private var listener: CropListener? = null
     private var bitmap: Bitmap? = null
