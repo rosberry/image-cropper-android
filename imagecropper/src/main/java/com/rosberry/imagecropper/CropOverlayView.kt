@@ -5,11 +5,10 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.Rect
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
-import androidx.core.graphics.toRectF
 
 class CropOverlayView : View {
 
@@ -17,7 +16,7 @@ class CropOverlayView : View {
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
-    val frameSize get() = cropRect.width()
+    val frameWidth get() = cropRect.width()
 
     var showGrid: Boolean = false
         set(value) {
@@ -25,24 +24,26 @@ class CropOverlayView : View {
             invalidate()
         }
 
-    private val frameLeft get() = cropRect.left.toFloat()
-    private val frameRight get() = cropRect.right.toFloat()
-    private val frameTop get() = cropRect.top.toFloat()
-    private val frameBottom get() = cropRect.bottom.toFloat()
+    private val frameLeft get() = cropRect.left
+    private val frameRight get() = cropRect.right
+    private val frameTop get() = cropRect.top
+    private val frameBottom get() = cropRect.bottom
 
-    private val frameMargin = 100
+    private val frameMargin = 100f
     private val gridRowCount = 3
-    private val cropRect = Rect()
+    private val cropRect = RectF()
     private val clipPath = Path()
-    private val overlayColor = Color.BLACK
-    private val frameWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
-    private val gridWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
+    private val overlayColor = Color.parseColor("#99000000")
+    private val clipShape = FrameShape.CIRCLE
+    private val frameStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
+    private val gridStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
     private val cropPaint = Paint().apply {
         style = Paint.Style.STROKE
         color = Color.WHITE
+        isAntiAlias = true
     }
 
-    private var gridLines = FloatArray(gridRowCount * 8)
+    private var gridLines = FloatArray(8 * gridRowCount - 1)
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -53,14 +54,9 @@ class CropOverlayView : View {
 
     override fun onDraw(canvas: Canvas?) {
         canvas?.apply {
-            save()
-            clipOutPath(clipPath)
-            drawColor(overlayColor)
-            restore()
-            drawFrame(this)
-            if (showGrid) {
-                drawGrid(this)
-            }
+            drawOverlay()
+            drawGrid()
+            drawFrame()
         }
     }
 
@@ -74,31 +70,49 @@ class CropOverlayView : View {
 
         clipPath.apply {
             reset()
-            addRect(cropRect.toRectF(), Path.Direction.CW)
+            when (clipShape) {
+                FrameShape.RECTANGLE -> addRect(cropRect, Path.Direction.CW)
+                FrameShape.CIRCLE -> addOval(cropRect, Path.Direction.CW)
+            }
         }
     }
 
     private fun calculateGridLines() {
-        for (i in 0 until gridRowCount) {
-            gridLines[8 * i] = frameLeft + frameSize / gridRowCount * (i + 1)
+        for (i in 0 until gridRowCount - 1) {
+            gridLines[8 * i] = frameLeft + frameWidth / gridRowCount * (i + 1)
             gridLines[8 * i + 1] = frameTop
-            gridLines[8 * i + 2] = frameLeft + frameSize / gridRowCount * (i + 1)
+            gridLines[8 * i + 2] = frameLeft + frameWidth / gridRowCount * (i + 1)
             gridLines[8 * i + 3] = frameBottom
 
             gridLines[8 * i + 4] = frameLeft
-            gridLines[8 * i + 5] = frameTop + frameSize / gridRowCount * (i + 1)
+            gridLines[8 * i + 5] = frameTop + frameWidth / gridRowCount * (i + 1)
             gridLines[8 * i + 6] = frameRight
-            gridLines[8 * i + 7] = frameTop + frameSize / gridRowCount * (i + 1)
+            gridLines[8 * i + 7] = frameTop + frameWidth / gridRowCount * (i + 1)
         }
     }
 
-    private fun drawGrid(canvas: Canvas?) {
-        cropPaint.strokeWidth = gridWidth
-        canvas?.drawLines(gridLines, cropPaint)
+    private fun Canvas.drawOverlay() {
+        save()
+        clipOutPath(clipPath)
+        drawColor(overlayColor)
+        restore()
     }
 
-    private fun drawFrame(canvas: Canvas?) {
-        cropPaint.strokeWidth = frameWidth
-        canvas?.drawRect(cropRect, cropPaint)
+    private fun Canvas.drawGrid() {
+        if (showGrid) {
+            save()
+            clipPath(clipPath)
+            cropPaint.strokeWidth = gridStrokeWidth
+            drawLines(gridLines, cropPaint)
+            restore()
+        }
+    }
+
+    private fun Canvas.drawFrame() {
+        cropPaint.strokeWidth = frameStrokeWidth
+        when (clipShape) {
+            FrameShape.RECTANGLE -> drawRect(cropRect, cropPaint)
+            FrameShape.CIRCLE -> drawOval(cropRect, cropPaint)
+        }
     }
 }

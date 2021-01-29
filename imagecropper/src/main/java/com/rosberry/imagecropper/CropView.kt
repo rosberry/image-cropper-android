@@ -17,10 +17,10 @@ import kotlin.math.roundToInt
 
 class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
 
-    private val xMin: Float get() = (overlay.frameSize / 2 - imageView.width / 2 * scale).coerceAtMost(0f)
-    private val yMin: Float get() = (overlay.frameSize / 2 - imageView.height / 2 * scale).coerceAtMost(0f)
-    private val xMax: Float get() = (imageView.width / 2 * scale - overlay.frameSize / 2).coerceAtLeast(0f)
-    private val yMax: Float get() = (imageView.height / 2 * scale - overlay.frameSize / 2).coerceAtLeast(0f)
+    private val xMin: Float get() = (overlay.frameWidth / 2 - imageView.width / 2 * scale).coerceAtMost(0f)
+    private val yMin: Float get() = (overlay.frameWidth / 2 - imageView.height / 2 * scale).coerceAtMost(0f)
+    private val xMax: Float get() = (imageView.width / 2 * scale - overlay.frameWidth / 2).coerceAtLeast(0f)
+    private val yMax: Float get() = (imageView.height / 2 * scale - overlay.frameWidth / 2).coerceAtLeast(0f)
 
     private val touch = PointF()
     private val translation = PointF()
@@ -53,7 +53,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     fun getCroppedImage(): Bitmap? {
-        return bitmap?.let { cropHelper.getCroppedImage(it, translation, overlay.frameSize, bitmapScale / scale) }
+        return bitmap?.let { cropHelper.getCroppedImage(it, translation, overlay.frameWidth, bitmapScale / scale) }
     }
 
     fun setBitmap(bitmap: Bitmap) {
@@ -72,7 +72,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         }
         val minSide = min(width, height).toFloat()
 
-        minScale = overlay.frameSize / minSide
+        minScale = overlay.frameWidth / minSide
         maxScale = minScale * 4
         scale = minScale
         bitmapScale = bitmap.width / width.toFloat()
