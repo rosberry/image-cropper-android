@@ -4,11 +4,12 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Rect
-import android.graphics.Region
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
+import androidx.core.graphics.toRectF
 
 class CropOverlayView : View {
 
@@ -32,12 +33,13 @@ class CropOverlayView : View {
     private val frameMargin = 100
     private val gridRowCount = 3
     private val cropRect = Rect()
-    private val overlayColor = Color.parseColor("#55000000")
+    private val clipPath = Path()
+    private val overlayColor = Color.BLACK
     private val frameWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
     private val gridWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
     private val cropPaint = Paint().apply {
         style = Paint.Style.STROKE
-        color = resources.getColor(android.R.color.white, null)
+        color = Color.WHITE
     }
 
     private var gridLines = FloatArray(gridRowCount * 8)
@@ -45,6 +47,24 @@ class CropOverlayView : View {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
+        updateClipPath()
+        calculateGridLines()
+    }
+
+    override fun onDraw(canvas: Canvas?) {
+        canvas?.apply {
+            save()
+            clipOutPath(clipPath)
+            drawColor(overlayColor)
+            restore()
+            drawFrame(this)
+            if (showGrid) {
+                drawGrid(this)
+            }
+        }
+    }
+
+    private fun updateClipPath() {
         cropRect.apply {
             left = 0 + frameMargin
             right = measuredWidth - frameMargin
@@ -52,19 +72,9 @@ class CropOverlayView : View {
             bottom = top + width()
         }
 
-        calculateGridLines()
-    }
-
-    override fun onDraw(canvas: Canvas?) {
-        canvas?.apply {
-            save()
-            clipOutRect(cropRect)
-            drawColor(overlayColor)
-            restore()
-            drawFrame(this)
-            if (showGrid) {
-                drawGrid(this)
-            }
+        clipPath.apply {
+            reset()
+            addRect(cropRect.toRectF(), Path.Direction.CW)
         }
     }
 
