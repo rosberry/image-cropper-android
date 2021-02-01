@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.Region
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
@@ -29,19 +30,19 @@ class CropOverlayView : View {
     private val frameTop get() = cropRect.top
     private val frameBottom get() = cropRect.bottom
 
-    private val frameMargin = 100f
-    private val gridRowCount = 3
-    private val cropRect = RectF()
     private val clipPath = Path()
-    private val overlayColor = Color.parseColor("#99000000")
     private val clipShape = FrameShape.CIRCLE
-    private val frameStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
-    private val gridStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
-    private val cropPaint = Paint().apply {
+    private val cropRect = RectF()
+    private val frameMargin = 100f
+    private val framePaint = Paint().apply {
         style = Paint.Style.STROKE
         color = Color.WHITE
         isAntiAlias = true
     }
+    private val frameStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
+    private val gridRowCount = 3
+    private val gridStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 0.5f, resources.displayMetrics)
+    private val overlayColor = Color.parseColor("#99000000")
 
     private var gridLines = FloatArray(8 * gridRowCount - 1)
 
@@ -62,10 +63,17 @@ class CropOverlayView : View {
 
     private fun updateClipPath() {
         cropRect.apply {
-            left = 0 + frameMargin
-            right = measuredWidth - frameMargin
-            top = measuredHeight / 2 - width() / 2
-            bottom = top + width()
+            if (measuredWidth > measuredHeight) {
+                top = 0 + frameMargin
+                bottom = measuredHeight - frameMargin
+                left = measuredWidth / 2 - height() / 2
+                right = left + height()
+            } else {
+                left = 0 + frameMargin
+                right = measuredWidth - frameMargin
+                top = measuredHeight / 2 - width() / 2
+                bottom = top + width()
+            }
         }
 
         clipPath.apply {
@@ -93,7 +101,7 @@ class CropOverlayView : View {
 
     private fun Canvas.drawOverlay() {
         save()
-        clipOutPath(clipPath)
+        clipPath(clipPath, Region.Op.DIFFERENCE)
         drawColor(overlayColor)
         restore()
     }
@@ -102,17 +110,17 @@ class CropOverlayView : View {
         if (showGrid) {
             save()
             clipPath(clipPath)
-            cropPaint.strokeWidth = gridStrokeWidth
-            drawLines(gridLines, cropPaint)
+            framePaint.strokeWidth = gridStrokeWidth
+            drawLines(gridLines, framePaint)
             restore()
         }
     }
 
     private fun Canvas.drawFrame() {
-        cropPaint.strokeWidth = frameStrokeWidth
+        framePaint.strokeWidth = frameStrokeWidth
         when (clipShape) {
-            FrameShape.RECTANGLE -> drawRect(cropRect, cropPaint)
-            FrameShape.CIRCLE -> drawOval(cropRect, cropPaint)
+            FrameShape.RECTANGLE -> drawRect(cropRect, framePaint)
+            FrameShape.CIRCLE -> drawOval(cropRect, framePaint)
         }
     }
 }

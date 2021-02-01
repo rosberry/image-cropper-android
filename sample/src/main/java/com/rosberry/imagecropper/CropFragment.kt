@@ -14,9 +14,7 @@ class CropFragment : Fragment() {
     private val bitmap
         get() = resources.assets
             .open("image.png")
-            .use {
-                BitmapFactory.decodeStream(it)
-            }
+            .use { BitmapFactory.decodeStream(it) }
 
     private lateinit var binding: FragmentCropperBinding
 
