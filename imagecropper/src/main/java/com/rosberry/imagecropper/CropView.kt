@@ -12,15 +12,16 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.widget.FrameLayout
 import android.widget.ImageView
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
 
-    private val xMin: Float get() = (overlay.frameWidth / 2 - imageView.width / 2 * scale).coerceAtMost(0f)
-    private val yMin: Float get() = (overlay.frameWidth / 2 - imageView.height / 2 * scale).coerceAtMost(0f)
-    private val xMax: Float get() = (imageView.width / 2 * scale - overlay.frameWidth / 2).coerceAtLeast(0f)
-    private val yMax: Float get() = (imageView.height / 2 * scale - overlay.frameWidth / 2).coerceAtLeast(0f)
+    private val xMin: Float get() = (overlay.frameWidth / 2 - imageView.width * scale / 2).coerceAtMost(0f)
+    private val yMin: Float get() = (overlay.frameHeight / 2 - imageView.height * scale / 2).coerceAtMost(0f)
+    private val xMax: Float get() = (imageView.width * scale / 2 - overlay.frameWidth / 2).coerceAtLeast(0f)
+    private val yMax: Float get() = (imageView.height * scale / 2 - overlay.frameHeight / 2).coerceAtLeast(0f)
 
     private val touch = PointF()
     private val translation = PointF()
@@ -53,7 +54,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     fun getCroppedImage(): Bitmap? {
-        return bitmap?.let { cropHelper.getCroppedImage(it, translation, overlay.frameWidth, bitmapScale / scale) }
+        return bitmap?.let { cropHelper.getCroppedImage(it, translation, overlay.frameWidth, overlay.frameHeight, bitmapScale / scale) }
     }
 
     fun setBitmap(bitmap: Bitmap) {
@@ -70,9 +71,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
             width = min(measuredWidth, bitmap.width)
             height = (width / ratio).roundToInt()
         }
-        val minSide = min(width, height).toFloat()
 
-        minScale = overlay.frameWidth / minSide
+        minScale = max(overlay.frameWidth / width, overlay.frameHeight / height)
         maxScale = minScale * 4
         scale = minScale
         bitmapScale = bitmap.width / width.toFloat()

@@ -42,15 +42,22 @@ class CropHelper(private val context: Context) {
         return bitmap
     }
 
-    fun getCroppedImage(bitmap: Bitmap, translation: PointF, frameSize: Float, relativeScale: Float): Bitmap? {
+    fun getCroppedImage(
+            bitmap: Bitmap,
+            translation: PointF,
+            frameWidth: Float,
+            frameHeight: Float,
+            relativeScale: Float
+    ): Bitmap? {
         return try {
-            val size = (frameSize * relativeScale).toInt()
-            val startX = (bitmap.width - size) / 2f
-            val startY = (bitmap.height - size) / 2f
+            val width = (frameWidth * relativeScale).toInt()
+            val height = (frameHeight * relativeScale).toInt()
+            val startX = (bitmap.width - width) / 2f
+            val startY = (bitmap.height - height) / 2f
             val x = (startX - translation.x * relativeScale).toInt()
             val y = (startY - translation.y * relativeScale).toInt()
 
-            Bitmap.createBitmap(bitmap, x, y, size, size)
+            Bitmap.createBitmap(bitmap, x, y, width, height)
         } catch (e: Exception) {
             e.printStackTrace()
             null

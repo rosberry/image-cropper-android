@@ -18,6 +18,7 @@ class CropOverlayView : View {
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
     val frameWidth get() = cropRect.width()
+    val frameHeight get() = cropRect.height()
 
     var showGrid: Boolean = false
         set(value) {
@@ -42,9 +43,9 @@ class CropOverlayView : View {
     private val frameStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
     private val gridRowCount = 3
     private val gridStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 0.5f, resources.displayMetrics)
+    private val gridLines = FloatArray(8 * gridRowCount - 1)
     private val overlayColor = Color.parseColor("#99000000")
-
-    private var gridLines = FloatArray(8 * gridRowCount - 1)
+    private val ratio = 1f
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -66,13 +67,13 @@ class CropOverlayView : View {
             if (measuredWidth > measuredHeight) {
                 top = 0 + frameMargin
                 bottom = measuredHeight - frameMargin
-                left = measuredWidth / 2 - height() / 2
-                right = left + height()
+                left = measuredWidth / 2 - height() * ratio / 2
+                right = left + height() * ratio
             } else {
                 left = 0 + frameMargin
                 right = measuredWidth - frameMargin
-                top = measuredHeight / 2 - width() / 2
-                bottom = top + width()
+                top = measuredHeight / 2 - width() / ratio / 2
+                bottom = top + width() / ratio
             }
         }
 
@@ -93,9 +94,9 @@ class CropOverlayView : View {
             gridLines[8 * i + 3] = frameBottom
 
             gridLines[8 * i + 4] = frameLeft
-            gridLines[8 * i + 5] = frameTop + frameWidth / gridRowCount * (i + 1)
+            gridLines[8 * i + 5] = frameTop + frameHeight / gridRowCount * (i + 1)
             gridLines[8 * i + 6] = frameRight
-            gridLines[8 * i + 7] = frameTop + frameWidth / gridRowCount * (i + 1)
+            gridLines[8 * i + 7] = frameTop + frameHeight / gridRowCount * (i + 1)
         }
     }
 
