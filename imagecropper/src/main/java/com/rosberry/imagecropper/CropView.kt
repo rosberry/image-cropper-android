@@ -18,13 +18,27 @@ import kotlin.math.roundToInt
 
 class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
 
+    var frameRatio: Float
+        get() = overlay.ratio
+        set(value) {
+            overlay.ratio = value
+            calculateScales()
+            update(true)
+        }
+
+    var frameShape: FrameShape
+        get() = overlay.frameShape
+        set(value) {
+            overlay.frameShape = value
+        }
+
     private val xMin: Float get() = (overlay.frameWidth / 2 - imageView.width * scale / 2).coerceAtMost(0f)
     private val yMin: Float get() = (overlay.frameHeight / 2 - imageView.height * scale / 2).coerceAtMost(0f)
     private val xMax: Float get() = (imageView.width * scale / 2 - overlay.frameWidth / 2).coerceAtLeast(0f)
     private val yMax: Float get() = (imageView.height * scale / 2 - overlay.frameHeight / 2).coerceAtLeast(0f)
 
     private val touch = PointF()
-    private val translation = PointF()
+    private val translation = PointF(0f, 0f)
     private val cropHelper = CropHelper(context)
     private val scaleDetector = ScaleGestureDetector(context, ScaleListener())
     private val overlay = CropOverlayView(context).apply {
@@ -37,12 +51,15 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     private var listener: CropListener? = null
     private var bitmap: Bitmap? = null
+    private var bitmapRatio = 0f
     private var scale = 1f
     private var minScale = 1f
     private var maxScale = 4f
     private var bitmapScale = 1f
     private var isScaling = false
     private var isDragging = false
+    private var imageWidth = 0
+    private var imageHeight = 0
 
     init {
         addView(imageView)
@@ -60,33 +77,36 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     fun setBitmap(bitmap: Bitmap) {
         this.bitmap = bitmap
 
-        val ratio = bitmap.width / bitmap.height.toFloat()
-        val height: Int
-        val width: Int
+        bitmapRatio = bitmap.width / bitmap.height.toFloat()
 
-        if (ratio > 0) {
-            height = min(measuredHeight, bitmap.height)
-            width = (height * ratio).roundToInt()
+        if (bitmapRatio > 0) {
+            imageHeight = min(measuredHeight, bitmap.height)
+            imageWidth = (imageHeight * bitmapRatio).roundToInt()
         } else {
-            width = min(measuredWidth, bitmap.width)
-            height = (width / ratio).roundToInt()
+            imageWidth = min(measuredWidth, bitmap.width)
+            imageHeight = (imageWidth / bitmapRatio).roundToInt()
         }
 
-        minScale = max(overlay.frameWidth / width, overlay.frameHeight / height)
-        maxScale = minScale * 4
-        scale = minScale
-        bitmapScale = bitmap.width / width.toFloat()
-        translation.x = 0f
-        translation.y = 0f
-        (imageView.layoutParams as LayoutParams).let {
-            it.gravity = Gravity.CENTER
-            it.height = height
-            it.width = width
-        }
+        calculateScales()
+
         imageView.setImageBitmap(bitmap)
         update(true)
 
         listener?.onImageLoaded()
+    }
+
+    private fun calculateScales() {
+        bitmap?.let { bitmap ->
+            minScale = max(overlay.frameWidth / imageWidth, overlay.frameHeight / imageHeight)
+            maxScale = minScale * 4
+            scale = minScale
+            bitmapScale = bitmap.width / imageWidth.toFloat()
+            (imageView.layoutParams as LayoutParams).let {
+                it.gravity = Gravity.CENTER
+                it.height = imageHeight
+                it.width = imageWidth
+            }
+        }
     }
 
     private fun update(checkTranslate: Boolean = false) {

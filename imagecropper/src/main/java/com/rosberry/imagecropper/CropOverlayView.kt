@@ -26,13 +26,22 @@ class CropOverlayView : View {
             invalidate()
         }
 
-    private val frameLeft get() = cropRect.left
-    private val frameRight get() = cropRect.right
-    private val frameTop get() = cropRect.top
-    private val frameBottom get() = cropRect.bottom
+    var ratio: Float = 1f
+        set(value) {
+            field = value
+            updateClipPath()
+            calculateGridLines()
+            invalidate()
+        }
+
+    var frameShape: FrameShape = FrameShape.RECTANGLE
+        set(value) {
+            field = value
+            updateClipPath()
+            invalidate()
+        }
 
     private val clipPath = Path()
-    private val clipShape = FrameShape.CIRCLE
     private val cropRect = RectF()
     private val frameMargin = 100f
     private val framePaint = Paint().apply {
@@ -45,7 +54,6 @@ class CropOverlayView : View {
     private val gridStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 0.5f, resources.displayMetrics)
     private val gridLines = FloatArray(8 * gridRowCount - 1)
     private val overlayColor = Color.parseColor("#99000000")
-    private val ratio = 1f
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -79,7 +87,7 @@ class CropOverlayView : View {
 
         clipPath.apply {
             reset()
-            when (clipShape) {
+            when (frameShape) {
                 FrameShape.RECTANGLE -> addRect(cropRect, Path.Direction.CW)
                 FrameShape.CIRCLE -> addOval(cropRect, Path.Direction.CW)
             }
@@ -88,15 +96,15 @@ class CropOverlayView : View {
 
     private fun calculateGridLines() {
         for (i in 0 until gridRowCount - 1) {
-            gridLines[8 * i] = frameLeft + frameWidth / gridRowCount * (i + 1)
-            gridLines[8 * i + 1] = frameTop
-            gridLines[8 * i + 2] = frameLeft + frameWidth / gridRowCount * (i + 1)
-            gridLines[8 * i + 3] = frameBottom
+            gridLines[8 * i] = cropRect.left + frameWidth / gridRowCount * (i + 1)
+            gridLines[8 * i + 1] = cropRect.top
+            gridLines[8 * i + 2] = cropRect.left + frameWidth / gridRowCount * (i + 1)
+            gridLines[8 * i + 3] = cropRect.bottom
 
-            gridLines[8 * i + 4] = frameLeft
-            gridLines[8 * i + 5] = frameTop + frameHeight / gridRowCount * (i + 1)
-            gridLines[8 * i + 6] = frameRight
-            gridLines[8 * i + 7] = frameTop + frameHeight / gridRowCount * (i + 1)
+            gridLines[8 * i + 4] = cropRect.left
+            gridLines[8 * i + 5] = cropRect.top + frameHeight / gridRowCount * (i + 1)
+            gridLines[8 * i + 6] = cropRect.right
+            gridLines[8 * i + 7] = cropRect.top + frameHeight / gridRowCount * (i + 1)
         }
     }
 
@@ -119,7 +127,7 @@ class CropOverlayView : View {
 
     private fun Canvas.drawFrame() {
         framePaint.strokeWidth = frameStrokeWidth
-        when (clipShape) {
+        when (frameShape) {
             FrameShape.RECTANGLE -> drawRect(cropRect, framePaint)
             FrameShape.CIRCLE -> drawOval(cropRect, framePaint)
         }

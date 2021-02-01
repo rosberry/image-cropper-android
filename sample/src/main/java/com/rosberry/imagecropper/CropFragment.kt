@@ -16,6 +16,11 @@ class CropFragment : Fragment() {
             .open("image.png")
             .use { BitmapFactory.decodeStream(it) }
 
+    private val ratios = listOf(1f, 4/3f, 16/9f, 3/4f, 9/16f)
+
+    private var currentRatio = 0
+    private var currentShape = 0
+
     private lateinit var binding: FragmentCropperBinding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -24,6 +29,14 @@ class CropFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        binding.buttonRatio.setOnClickListener {
+            currentRatio = if (currentRatio < ratios.size - 1) currentRatio + 1 else 0
+            binding.cropView.frameRatio = ratios[currentRatio]
+        }
+        binding.buttonShape.setOnClickListener {
+            currentShape = if (currentShape < FrameShape.values().size - 1) currentShape + 1 else 0
+            binding.cropView.frameShape = FrameShape.values()[currentShape]
+        }
         view.post { binding.cropView.setBitmap(bitmap) }
     }
 
