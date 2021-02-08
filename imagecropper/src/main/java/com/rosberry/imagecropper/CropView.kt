@@ -86,14 +86,13 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     private val touch = PointF()
     private val translation = PointF(0f, 0f)
-    private val cropHelper = CropHelper(context)
+    private val imageLoadHelper = ImageLoadHelper(context)
     private val scaleDetector = ScaleGestureDetector(context, ScaleListener())
     private val imageView = ImageView(context).apply {
         scaleType = ImageView.ScaleType.FIT_XY
         isClickable = false
     }
 
-    private var listener: CropListener? = null
     private var bitmap: Bitmap? = null
     private var scale = 1f
     private var minScale = 1f
@@ -107,22 +106,12 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     init {
         val attr = context.theme.obtainStyledAttributes(attrs, R.styleable.CropView, 0, 0)
         val frameColor = attr.getColor(R.styleable.CropView_frameColor, Color.WHITE)
-        val frameMargin = attr.getDimension(
-                R.styleable.CropView_frameMargin,
-                resources.getDimension(R.dimen.cropView_frameMargin)
-        )
+        val frameMargin = attr.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin))
         val frameShape = FrameShape.values()[attr.getInt(R.styleable.CropView_frameShape, 0)]
-        val frameRatio = attr.getString(R.styleable.CropView_frameRatio)
-            .parseRatio()
-        val frameWidth = attr.getDimension(
-                R.styleable.CropView_frameWidth,
-                resources.getDimension(R.dimen.cropView_frameWidth)
-        )
+        val frameRatio = attr.getString(R.styleable.CropView_frameRatio).parseRatio()
+        val frameWidth = attr.getDimension(R.styleable.CropView_frameWidth, resources.getDimension(R.dimen.cropView_frameWidth))
         val gridColor = attr.getColor(R.styleable.CropView_gridColor, Color.WHITE)
-        val gridWidth = attr.getDimension(
-                R.styleable.CropView_gridWidth,
-                resources.getDimension(R.dimen.cropView_gridWidth)
-        )
+        val gridWidth = attr.getDimension(R.styleable.CropView_gridWidth, resources.getDimension(R.dimen.cropView_gridWidth))
         val gridRowCount = attr.getInt(R.styleable.CropView_gridRows, 3)
         val overlayColor = attr.getColor(R.styleable.CropView_overlayColor, Color.argb(128, 0, 0, 0))
 
@@ -148,12 +137,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         addView(overlay)
     }
 
-    fun setListener(listener: CropListener) {
-        this.listener = listener
-    }
-
     fun crop(): Bitmap? {
-        return bitmap?.let { cropHelper.getCroppedImage(it, translation, overlay.frameWidth, overlay.frameHeight, bitmapScale / scale) }
+        return bitmap?.let { CropHelper.getCroppedImage(it, translation, overlay.frameWidth, overlay.frameHeight, bitmapScale / scale) }
     }
 
     fun setBitmap(bitmap: Bitmap) {
@@ -171,10 +156,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
         calculateScales()
 
-        imageView.setImageBitmap(bitmap)
+        imageView.setImageBitmap(imageLoadHelper.resizeBitmap(bitmap))
         update(true)
-
-        listener?.onImageLoaded()
     }
 
     private fun calculateScales() {

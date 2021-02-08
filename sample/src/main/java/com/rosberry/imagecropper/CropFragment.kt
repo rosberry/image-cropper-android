@@ -20,14 +20,14 @@ class CropFragment : Fragment() {
 
     private val random by lazy { Random() }
 
-    private val ratios = listOf(1f, 4/3f, 16/9f, 3/4f, 9/16f)
+    private val ratios = listOf(1f, 4 / 3f, 16 / 9f, 3 / 4f, 9 / 16f)
 
     private var currentRatio = 0
     private var currentShape = 0
 
     private lateinit var binding: FragmentCropperBinding
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentCropperBinding.inflate(inflater, container, false)
         return binding.root
     }
