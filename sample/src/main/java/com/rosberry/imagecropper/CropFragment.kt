@@ -41,6 +41,6 @@ class CropFragment : Fragment() {
     }
 
     fun getCroppedImage(): Bitmap? {
-        return binding.cropView.getCroppedImage()
+        return binding.cropView.crop()
     }
 }

@@ -1,10 +1,13 @@
 package com.rosberry.imagecropper
 
+import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import androidx.exifinterface.media.ExifInterface
 import java.io.IOException
@@ -14,7 +17,10 @@ import kotlin.math.min
 class CropHelper(private val context: Context) {
 
     fun getBitmap(uri: Uri): Bitmap {
-        val source = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        val source = when (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            true -> decodeBitmap(uri)
+            false -> getBitmapCompat(uri)
+        }
         val maxSize = context.resources.displayMetrics.heightPixels
         val matrix = Matrix()
 
@@ -80,5 +86,14 @@ class CropHelper(private val context: Context) {
             e.printStackTrace()
             0f
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.P)
+    private fun decodeBitmap(uri: Uri): Bitmap {
+        return ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
+    }
+
+    private fun getBitmapCompat(uri: Uri): Bitmap {
+        return MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
     }
 }

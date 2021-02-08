@@ -51,7 +51,6 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     private var listener: CropListener? = null
     private var bitmap: Bitmap? = null
-    private var bitmapRatio = 0f
     private var scale = 1f
     private var minScale = 1f
     private var maxScale = 4f
@@ -70,14 +69,14 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         this.listener = listener
     }
 
-    fun getCroppedImage(): Bitmap? {
+    fun crop(): Bitmap? {
         return bitmap?.let { cropHelper.getCroppedImage(it, translation, overlay.frameWidth, overlay.frameHeight, bitmapScale / scale) }
     }
 
     fun setBitmap(bitmap: Bitmap) {
         this.bitmap = bitmap
 
-        bitmapRatio = bitmap.width / bitmap.height.toFloat()
+        val bitmapRatio = bitmap.width / bitmap.height.toFloat()
 
         if (bitmapRatio > 0) {
             imageHeight = min(measuredHeight, bitmap.height)

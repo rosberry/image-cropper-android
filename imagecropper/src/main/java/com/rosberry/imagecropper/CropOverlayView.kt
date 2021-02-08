@@ -29,37 +29,85 @@ class CropOverlayView : View {
     var ratio: Float = 1f
         set(value) {
             field = value
-            updateClipPath()
-            calculateGridLines()
+            updateFrame()
             invalidate()
         }
 
-    var frameShape: FrameShape = FrameShape.RECTANGLE
+    var frameColor
+        get() = framePaint.color
+        set(value) {
+            framePaint.color = value
+            invalidate()
+        }
+
+    var frameMargin = 100f
+        set(value) {
+            field = value
+            updateFrame()
+            invalidate()
+        }
+
+    var frameShape = FrameShape.RECTANGLE
         set(value) {
             field = value
             updateClipPath()
             invalidate()
         }
 
+    var frameStrokeWidth
+        get() = framePaint.strokeWidth
+        set(value) {
+            framePaint.strokeWidth = value
+            invalidate()
+        }
+
+    var gridColor
+        get() = gridPaint.color
+        set(value) {
+            gridPaint.color = value
+            invalidate()
+        }
+
+    var gridStrokeWidth
+        get() = gridPaint.strokeWidth
+        set(value) {
+            gridPaint.strokeWidth = value
+            invalidate()
+        }
+
+    var gridRowCount = 3
+        set(value) {
+            field = value
+            calculateGridLines()
+            invalidate()
+        }
+
+    var overlayColor = Color.parseColor("#99000000")
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     private val clipPath = Path()
     private val cropRect = RectF()
-    private val frameMargin = 100f
     private val framePaint = Paint().apply {
-        style = Paint.Style.STROKE
         color = Color.WHITE
         isAntiAlias = true
+        strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
+        style = Paint.Style.STROKE
     }
-    private val frameStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics)
-    private val gridRowCount = 3
-    private val gridStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 0.5f, resources.displayMetrics)
     private val gridLines = FloatArray(8 * gridRowCount - 1)
-    private val overlayColor = Color.parseColor("#99000000")
+    private val gridPaint = Paint().apply {
+        color = Color.WHITE
+        isAntiAlias = true
+        strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 0.5f, resources.displayMetrics)
+        style = Paint.Style.STROKE
+    }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
-        updateClipPath()
-        calculateGridLines()
+        updateFrame()
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -68,6 +116,11 @@ class CropOverlayView : View {
             drawGrid()
             drawFrame()
         }
+    }
+
+    private fun updateFrame() {
+        updateClipPath()
+        calculateGridLines()
     }
 
     private fun updateClipPath() {
@@ -119,14 +172,12 @@ class CropOverlayView : View {
         if (showGrid) {
             save()
             clipPath(clipPath)
-            framePaint.strokeWidth = gridStrokeWidth
-            drawLines(gridLines, framePaint)
+            drawLines(gridLines, gridPaint)
             restore()
         }
     }
 
     private fun Canvas.drawFrame() {
-        framePaint.strokeWidth = frameStrokeWidth
         when (frameShape) {
             FrameShape.RECTANGLE -> drawRect(cropRect, framePaint)
             FrameShape.CIRCLE -> drawOval(cropRect, framePaint)
