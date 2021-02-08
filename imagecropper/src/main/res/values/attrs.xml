@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CropView">
+        <attr name="frameColor" format="reference|color" />
+        <attr name="frameMargin" format="dimension" />
+        <attr name="frameShape" format="enum">
+            <enum name="rect" value="0" />
+            <enum name="oval" value="1" />
+        </attr>
+        <attr name="frameRatio" format="string" />
+        <attr name="frameWidth" format="dimension" />
+        <attr name="gridColor" format="reference|color" />
+        <attr name="gridEnabled" format="boolean" />
+        <attr name="gridWidth" format="dimension" />
+        <attr name="gridRows" format="integer" />
+        <attr name="overlayColor" format="reference|color" />
+    </declare-styleable>
+</resources>

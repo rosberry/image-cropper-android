@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="cropView_frameMargin" type="dimen">24dp</item>
+    <item name="cropView_frameWidth" type="dimen">1dp</item>
+    <item name="cropView_gridWidth" type="dimen">0.5dp</item>
+</resources>

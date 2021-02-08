@@ -2,12 +2,14 @@ package com.rosberry.imagecropper
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.rosberry.imagecropper.databinding.FragmentCropperBinding
+import java.util.Random
 
 class CropFragment : Fragment() {
 
@@ -15,6 +17,8 @@ class CropFragment : Fragment() {
         get() = resources.assets
             .open("image.png")
             .use { BitmapFactory.decodeStream(it) }
+
+    private val random by lazy { Random() }
 
     private val ratios = listOf(1f, 4/3f, 16/9f, 3/4f, 9/16f)
 
@@ -29,15 +33,25 @@ class CropFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        binding.buttonRatio.setOnClickListener {
-            currentRatio = if (currentRatio < ratios.size - 1) currentRatio + 1 else 0
-            binding.cropView.frameRatio = ratios[currentRatio]
+        binding.apply {
+            buttonColor.setOnClickListener {
+                cropView.overlayColor = Color.argb(127, random.nextInt(256), random.nextInt(256), random.nextInt(256))
+                cropView.frameColor = Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256))
+                cropView.gridColor = Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256))
+            }
+            buttonRatio.setOnClickListener {
+                currentRatio = if (currentRatio < ratios.size - 1) currentRatio + 1 else 0
+                cropView.frameRatio = ratios[currentRatio]
+            }
+            buttonShape.setOnClickListener {
+                currentShape = if (currentShape < FrameShape.values().size - 1) currentShape + 1 else 0
+                cropView.frameShape = FrameShape.values()[currentShape]
+            }
+            buttonGrid.setOnClickListener {
+                cropView.gridRows = random.nextInt(67) + 3
+            }
+            view.post { cropView.setBitmap(bitmap) }
         }
-        binding.buttonShape.setOnClickListener {
-            currentShape = if (currentShape < FrameShape.values().size - 1) currentShape + 1 else 0
-            binding.cropView.frameShape = FrameShape.values()[currentShape]
-        }
-        view.post { binding.cropView.setBitmap(bitmap) }
     }
 
     fun getCroppedImage(): Bitmap? {

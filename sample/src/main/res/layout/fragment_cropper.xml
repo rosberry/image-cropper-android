@@ -10,10 +10,19 @@
     <com.rosberry.imagecropper.CropView android:id="@+id/cropView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:gridEnabled="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/buttonColor"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="16dp"
+        android:text="Color"
+        app:layout_constraintBottom_toTopOf="@id/buttonShape"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <androidx.appcompat.widget.AppCompatButton android:id="@+id/buttonShape"
         android:layout_width="100dp"
@@ -30,4 +39,12 @@
         android:text="Ratio"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/buttonGrid"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="16dp"
+        android:text="Grid"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/buttonRatio" />
 </androidx.constraintlayout.widget.ConstraintLayout>
