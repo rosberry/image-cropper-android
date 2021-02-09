@@ -8,15 +8,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.rosberry.imagecropper.databinding.FragmentCropperBinding
+import kotlinx.coroutines.launch
 import java.util.Random
 
 class CropFragment : Fragment() {
-
-    private val bitmap
-        get() = resources.assets
-            .open("image.png")
-            .use { BitmapFactory.decodeStream(it) }
 
     private val random by lazy { Random() }
 
@@ -50,7 +47,7 @@ class CropFragment : Fragment() {
             buttonGrid.setOnClickListener {
                 cropView.gridRows = random.nextInt(67) + 3
             }
-            view.post { cropView.setBitmap(bitmap) }
+            view.post { lifecycleScope.launch { cropView.setImageAsset("2053958.jpg") } }
         }
     }
 
