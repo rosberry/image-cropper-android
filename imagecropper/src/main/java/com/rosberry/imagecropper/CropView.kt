@@ -4,6 +4,7 @@ import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.TypedArray
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PointF
@@ -13,25 +14,20 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.widget.FrameLayout
 import android.widget.ImageView
+import androidx.core.content.res.use
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
 
-    var gridEnabled: Boolean
+    private val overlay: CropOverlayView = context.theme
+        .obtainStyledAttributes(attrs, R.styleable.CropView, 0, 0)
+        .use { getOverlay(it) }
 
-    var frameColor: Int
-        get() = overlay.frameColor
-        set(value) {
-            overlay.frameColor = value
-        }
+    var frameColor: Int by overlay::frameColor
 
-    var frameMargin: Float
-        get() = overlay.frameMargin
-        set(value) {
-            overlay.frameMargin = value
-        }
+    var frameMargin: Float by overlay::frameMargin
 
     var frameRatio: Float
         get() = overlay.ratio
@@ -41,48 +37,22 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
             update(true)
         }
 
-    var frameShape: FrameShape
-        get() = overlay.frameShape
-        set(value) {
-            overlay.frameShape = value
-        }
+    var frameShape: FrameShape by overlay::frameShape
 
-    var frameWidth: Float
-        get() = overlay.frameStrokeWidth
-        set(value) {
-            overlay.frameStrokeWidth = value
-        }
+    var frameWidth: Float by overlay::frameStrokeWidth
 
-    var gridColor: Int
-        get() = overlay.gridColor
-        set(value) {
-            overlay.gridColor = value
-        }
+    var gridColor: Int by overlay::gridColor
 
-    var gridRows: Int
-        get() = overlay.gridRowCount
-        set(value) {
-            overlay.gridRowCount = value
-        }
+    var gridRows: Int by overlay::gridRowCount
 
-    var gridWidth: Float
-        get() = overlay.gridStrokeWidth
-        set(value) {
-            overlay.gridStrokeWidth = value
-        }
+    var gridWidth: Float by overlay::gridStrokeWidth
 
-    var overlayColor: Int
-        get() = overlay.overlayColor
-        set(value) {
-            overlay.overlayColor = value
-        }
+    var overlayColor: Int by overlay::overlayColor
 
     private val xMin: Float get() = (overlay.frameWidth / 2 - imageView.width * scale / 2).coerceAtMost(0f)
     private val yMin: Float get() = (overlay.frameHeight / 2 - imageView.height * scale / 2).coerceAtMost(0f)
     private val xMax: Float get() = (imageView.width * scale / 2 - overlay.frameWidth / 2).coerceAtLeast(0f)
     private val yMax: Float get() = (imageView.height * scale / 2 - overlay.frameHeight / 2).coerceAtLeast(0f)
-
-    private val overlay: CropOverlayView
 
     private val touch = PointF()
     private val translation = PointF(0f, 0f)
@@ -102,38 +72,14 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private var isDragging = false
     private var imageWidth = 0
     private var imageHeight = 0
+    private var gridEnabled = false
 
     init {
-        val attr = context.theme.obtainStyledAttributes(attrs, R.styleable.CropView, 0, 0)
-        val frameColor = attr.getColor(R.styleable.CropView_frameColor, Color.WHITE)
-        val frameMargin = attr.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin))
-        val frameShape = FrameShape.values()[attr.getInt(R.styleable.CropView_frameShape, 0)]
-        val frameRatio = attr.getString(R.styleable.CropView_frameRatio).parseRatio()
-        val frameWidth = attr.getDimension(R.styleable.CropView_frameWidth, resources.getDimension(R.dimen.cropView_frameWidth))
-        val gridColor = attr.getColor(R.styleable.CropView_gridColor, Color.WHITE)
-        val gridWidth = attr.getDimension(R.styleable.CropView_gridWidth, resources.getDimension(R.dimen.cropView_gridWidth))
-        val gridRowCount = attr.getInt(R.styleable.CropView_gridRows, 3)
-        val overlayColor = attr.getColor(R.styleable.CropView_overlayColor, Color.argb(128, 0, 0, 0))
-
-        gridEnabled = attr.getBoolean(R.styleable.CropView_gridEnabled, false)
-        attr.recycle()
+        context.theme
+            .obtainStyledAttributes(attrs, R.styleable.CropView, 0, 0)
+            .use { gridEnabled = it.getBoolean(R.styleable.CropView_gridEnabled, false) }
 
         addView(imageView)
-
-        overlay = CropOverlayView(
-                context,
-                frameColor,
-                frameMargin,
-                frameShape,
-                frameRatio,
-                frameWidth,
-                gridColor,
-                gridRowCount,
-                gridWidth,
-                overlayColor
-        ).apply {
-            isClickable = false
-        }
         addView(overlay)
     }
 
@@ -158,6 +104,22 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
         imageView.setImageBitmap(imageLoadHelper.resizeBitmap(bitmap))
         update(true)
+    }
+
+    private fun getOverlay(attrs: TypedArray): CropOverlayView {
+        return CropOverlayView(
+                context,
+                attrs.getColor(R.styleable.CropView_frameColor, Color.WHITE),
+                attrs.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin)),
+                FrameShape.values()[attrs.getInt(R.styleable.CropView_frameShape, 0)],
+                attrs.getString(R.styleable.CropView_frameRatio)
+                    .parseRatio(),
+                attrs.getDimension(R.styleable.CropView_frameWidth, resources.getDimension(R.dimen.cropView_frameWidth)),
+                attrs.getColor(R.styleable.CropView_gridColor, Color.WHITE),
+                attrs.getInt(R.styleable.CropView_gridRows, 3),
+                attrs.getDimension(R.styleable.CropView_gridWidth, resources.getDimension(R.dimen.cropView_gridWidth)),
+                attrs.getColor(R.styleable.CropView_overlayColor, Color.argb(128, 0, 0, 0))
+        ).apply { isClickable = false }
     }
 
     private fun calculateScales() {
