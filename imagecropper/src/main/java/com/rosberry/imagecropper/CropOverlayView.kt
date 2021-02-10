@@ -119,16 +119,16 @@ internal class CropOverlayView(
 
     private fun updateClipPath() {
         cropRect.apply {
-            if (measuredWidth > measuredHeight) {
-                top = 0 + frameMargin
-                bottom = measuredHeight - frameMargin
-                left = measuredWidth / 2 - height() * ratio / 2
-                right = left + height() * ratio
+            if (measuredWidth / measuredHeight.toFloat() > ratio) {
+                alignHorizontally()
+                if (width() > measuredWidth - 2 * frameMargin) {
+                    alignVertically()
+                }
             } else {
-                left = 0 + frameMargin
-                right = measuredWidth - frameMargin
-                top = measuredHeight / 2 - width() / ratio / 2
-                bottom = top + width() / ratio
+                alignVertically()
+                if (height() > measuredHeight - 2 * frameMargin) {
+                    alignHorizontally()
+                }
             }
         }
 
@@ -139,6 +139,20 @@ internal class CropOverlayView(
                 FrameShape.OVAL -> addOval(cropRect, Path.Direction.CW)
             }
         }
+    }
+
+    private fun RectF.alignVertically() {
+        left = 0 + frameMargin
+        right = measuredWidth - frameMargin
+        top = measuredHeight / 2 - width() / ratio / 2
+        bottom = top + width() / ratio
+    }
+
+    private fun RectF.alignHorizontally() {
+        top = 0 + frameMargin
+        bottom = measuredHeight - frameMargin
+        left = measuredWidth / 2 - height() * ratio / 2
+        right = left + height() * ratio
     }
 
     private fun calculateGridLines() {
