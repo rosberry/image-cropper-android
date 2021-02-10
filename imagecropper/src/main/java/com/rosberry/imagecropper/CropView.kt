@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.PointF
+import android.graphics.Rect
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.Gravity
@@ -56,7 +57,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private val xMax: Float get() = (imageView.width * scale / 2 - overlay.frameWidth / 2).coerceAtLeast(0f)
     private val yMax: Float get() = (imageView.height * scale / 2 - overlay.frameHeight / 2).coerceAtLeast(0f)
 
-    private val imageLoadHelper = ImageLoadHelper(context)
+    private val helper = Helper(context)
     private val imageView = ImageView(context).apply {
         scaleType = ImageView.ScaleType.FIT_XY
         isClickable = false
@@ -66,15 +67,15 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private val translation = PointF(0f, 0f)
 
     private var bitmapOptions: BitmapFactory.Options? = null
+    private var gridEnabled = false
+    private var isScaling = false
+    private var isDragging = false
     private var scale = 1f
     private var minScale = 1f
     private var maxScale = 4f
-    private var bitmapScale = 1f
-    private var isScaling = false
-    private var isDragging = false
-    private var imageWidth = 0
-    private var imageHeight = 0
-    private var gridEnabled = false
+    private var previewScale = 1f
+    private var previewWidth = 0
+    private var previewHeight = 0
 
     private var imageAssetName: String? = null
     private var imageUri: Uri? = null
@@ -89,18 +90,13 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         addView(overlay)
     }
 
-    fun crop(): Bitmap? {
-        //        return bitmap?.let { CropHelper.getCroppedImage(it, translation, overlay.frameWidth, overlay.frameHeight, bitmapScale / scale) }
-        return null
-    }
-
     fun setImageAsset(fileName: String) {
         imageUri = null
         imageResId = null
         imageAssetName = fileName
-        bitmapOptions = imageLoadHelper.getAssetOptions(fileName)
+        bitmapOptions = helper.getDecodeOptions(fileName)
 
-        val bitmap = bitmapOptions?.let { imageLoadHelper.getPreviewBitmap(fileName, measuredWidth, measuredHeight, it) }
+        val bitmap = bitmapOptions?.let { helper.getPreviewBitmap(fileName, measuredWidth, measuredHeight, it) }
         setPreviewBitmap(bitmap)
     }
 
@@ -108,9 +104,9 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         imageUri = null
         imageAssetName = null
         imageResId = resId
-        bitmapOptions = imageLoadHelper.getResourceOptions(resId)
+        bitmapOptions = helper.getDecodeOptions(resId)
 
-        val bitmap = bitmapOptions?.let { imageLoadHelper.getPreviewBitmap(resId, measuredWidth, measuredHeight, it) }
+        val bitmap = bitmapOptions?.let { helper.getPreviewBitmap(resId, measuredWidth, measuredHeight, it) }
         setPreviewBitmap(bitmap)
     }
 
@@ -118,24 +114,32 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         imageResId = null
         imageAssetName = null
         imageUri = uri
-        bitmapOptions = imageLoadHelper.getFileOptions(uri)
+        bitmapOptions = helper.getDecodeOptions(uri)
 
-        val bitmap = bitmapOptions?.let { imageLoadHelper.getPreviewBitmap(uri, measuredWidth, measuredHeight, it) }
+        val bitmap = bitmapOptions?.let { helper.getPreviewBitmap(uri, measuredWidth, measuredHeight, it) }
         setPreviewBitmap(bitmap)
+    }
+
+    fun crop(): Bitmap? {
+        val rect = getCropRect() ?: return null
+
+        return imageUri?.let { helper.getCroppedBitmap(it, rect) }
+            ?: imageResId?.let { helper.getCroppedBitmap(it, rect) }
+            ?: imageAssetName?.let { helper.getCroppedBitmap(it, rect) }
     }
 
     private fun setPreviewBitmap(bitmap: Bitmap?) {
         bitmap ?: throw IllegalStateException()
 
         bitmapOptions?.let { options ->
-            val imageRatio = options.outWidth / options.outHeight.toFloat()
+            val ratio = options.outWidth / options.outHeight.toFloat()
 
-            if (imageRatio > 0) {
-                imageHeight = min(measuredHeight, options.outHeight)
-                imageWidth = (imageHeight * imageRatio).roundToInt()
+            if (ratio > 0) {
+                previewHeight = min(measuredHeight, options.outHeight)
+                previewWidth = (previewHeight * ratio).roundToInt()
             } else {
-                imageWidth = min(measuredWidth, options.outWidth)
-                imageHeight = (imageWidth / imageRatio).roundToInt()
+                previewWidth = min(measuredWidth, options.outWidth)
+                previewHeight = (previewWidth / ratio).roundToInt()
             }
 
             calculateScales()
@@ -143,6 +147,20 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
             imageView.setImageBitmap(bitmap)
             update(true)
         } ?: throw IllegalStateException()
+    }
+
+    private fun getCropRect(): Rect? {
+        return bitmapOptions?.let { options ->
+            val relativeScale = previewScale / scale
+            val width = (overlay.frameWidth * relativeScale).toInt()
+            val height = (overlay.frameHeight * relativeScale).toInt()
+            val relativeLeft = (options.outWidth - width) / 2f
+            val relativeTop = (options.outHeight - height) / 2f
+            val left = (relativeLeft - translation.x * relativeScale).toInt()
+            val top = (relativeTop - translation.y * relativeScale).toInt()
+
+            Rect(left, top, left + width, top + height)
+        }
     }
 
     private fun getOverlay(attr: TypedArray): CropOverlayView {
@@ -163,14 +181,14 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     private fun calculateScales() {
         bitmapOptions?.let { options ->
-            minScale = max(overlay.frameWidth / imageWidth, overlay.frameHeight / imageHeight)
+            previewScale = options.outWidth / previewWidth.toFloat()
+            minScale = max(overlay.frameWidth / previewWidth, overlay.frameHeight / previewHeight)
             maxScale = minScale * 4
             scale = minScale
-            bitmapScale = options.outWidth / imageWidth.toFloat()
             (imageView.layoutParams as LayoutParams).let {
                 it.gravity = Gravity.CENTER
-                it.height = imageHeight
-                it.width = imageWidth
+                it.height = previewHeight
+                it.width = previewWidth
             }
         }
     }

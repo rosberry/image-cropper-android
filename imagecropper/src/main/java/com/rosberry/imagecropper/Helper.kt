@@ -3,55 +3,74 @@ package com.rosberry.imagecropper
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
 import android.graphics.Matrix
+import android.graphics.Rect
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import java.io.InputStream
 import kotlin.math.max
 
-class ImageLoadHelper(private val context: Context) {
+class Helper(private val context: Context) {
 
-    fun getAssetOptions(fileName: String): BitmapFactory.Options {
-        return getSourceOptions(context.resources.assets.open(fileName))
-    }
+    fun getDecodeOptions(fileName: String): BitmapFactory.Options = getDecodeOptions(getAssetStream(fileName))
 
-    fun getFileOptions(uri: Uri): BitmapFactory.Options {
-        return getSourceOptions(context.contentResolver.openInputStream(uri))
-    }
+    fun getDecodeOptions(uri: Uri): BitmapFactory.Options = getDecodeOptions(getFileStream(uri))
 
-    fun getResourceOptions(resId: Int): BitmapFactory.Options {
-        val options = BitmapFactory.Options()
-            .apply { inJustDecodeBounds = true }
+    fun getDecodeOptions(resId: Int): BitmapFactory.Options = getDecodeOptions(getResourceStream(resId))
 
-        BitmapFactory.decodeResource(context.resources, resId, options)
-        return options
-    }
+    fun getCroppedBitmap(fileName: String, cropRect: Rect): Bitmap? = getCroppedBitmap(getAssetStream(fileName), cropRect)
+
+    fun getCroppedBitmap(uri: Uri, cropRect: Rect): Bitmap? = getCroppedBitmap(getFileStream(uri), cropRect)
+
+    fun getCroppedBitmap(resId: Int, cropRect: Rect): Bitmap? = getCroppedBitmap(getResourceStream(resId), cropRect)
 
     fun getPreviewBitmap(
             uri: Uri,
             width: Int,
             height: Int,
             options: BitmapFactory.Options
-    ): Bitmap? {
-        return getPreviewBitmap(context.contentResolver.openInputStream(uri), width, height, options)
-    }
+    ): Bitmap? = getPreviewBitmap(getFileStream(uri), width, height, options)
 
     fun getPreviewBitmap(
-            assetName: String,
+            fileName: String,
             width: Int,
             height: Int,
             options: BitmapFactory.Options
-    ): Bitmap? {
-        return getPreviewBitmap(context.resources.assets.open(assetName), width, height, options)
-    }
+    ): Bitmap? = getPreviewBitmap(getAssetStream(fileName), width, height, options)
 
     fun getPreviewBitmap(
             resId: Int,
             width: Int,
             height: Int,
             options: BitmapFactory.Options
-    ): Bitmap {
-        return BitmapFactory.decodeResource(context.resources, resId, getPreviewOptions(width, height, options))
+    ): Bitmap? = getPreviewBitmap(getResourceStream(resId), width, height, options)
+
+    private fun getDecodeOptions(inputStream: InputStream?): BitmapFactory.Options {
+        return createDecodeOptions().apply {
+            inputStream.use { BitmapFactory.decodeStream(it, null, this) }
+        }
+    }
+
+    private fun createDecodeOptions(): BitmapFactory.Options {
+        return BitmapFactory.Options()
+            .apply { inJustDecodeBounds = true }
+    }
+
+    private fun getFileStream(uri: Uri): InputStream? = context.contentResolver.openInputStream(uri)
+
+    private fun getAssetStream(fileName: String): InputStream = context.resources.assets.open(fileName)
+
+    private fun getResourceStream(resId: Int): InputStream = context.resources.openRawResource(resId)
+
+    private fun getCroppedBitmap(inputStream: InputStream?, cropRect: Rect): Bitmap? {
+        inputStream.use {
+            val decoder = BitmapRegionDecoder.newInstance(it, false)
+            val bitmap = decoder.decodeRegion(cropRect, null)
+
+            decoder.recycle()
+            return bitmap
+        }
     }
 
     private fun getPreviewBitmap(inputStream: InputStream?, width: Int, height: Int, options: BitmapFactory.Options): Bitmap? {
@@ -69,14 +88,6 @@ class ImageLoadHelper(private val context: Context) {
 
             return source
         }
-    }
-
-    private fun getSourceOptions(inputStream: InputStream?): BitmapFactory.Options {
-        val options = BitmapFactory.Options()
-            .apply { inJustDecodeBounds = true }
-
-        inputStream.use { BitmapFactory.decodeStream(it, null, options) }
-        return options
     }
 
     private fun getPreviewOptions(width: Int, height: Int, options: BitmapFactory.Options): BitmapFactory.Options {
