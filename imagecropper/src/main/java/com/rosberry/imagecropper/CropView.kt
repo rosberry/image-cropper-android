@@ -56,14 +56,14 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private val xMax: Float get() = (imageView.width * scale / 2 - overlay.frameWidth / 2).coerceAtLeast(0f)
     private val yMax: Float get() = (imageView.height * scale / 2 - overlay.frameHeight / 2).coerceAtLeast(0f)
 
-    private val touch = PointF()
-    private val translation = PointF(0f, 0f)
-    private val scaleDetector = ScaleGestureDetector(context, ScaleListener())
+    private val imageLoadHelper = ImageLoadHelper(context)
     private val imageView = ImageView(context).apply {
         scaleType = ImageView.ScaleType.FIT_XY
         isClickable = false
     }
-    private val imageLoadHelper by lazy { ImageLoadHelper(context) }
+    private val scaleDetector = ScaleGestureDetector(context, ScaleListener())
+    private val touch = PointF()
+    private val translation = PointF(0f, 0f)
 
     private var bitmapOptions: BitmapFactory.Options? = null
     private var scale = 1f
@@ -98,21 +98,33 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         imageUri = null
         imageResId = null
         imageAssetName = fileName
-        bitmapOptions = OptionsHelper.getAssetOptions(context, fileName)
+        bitmapOptions = imageLoadHelper.getAssetOptions(fileName)
 
-        val bitmap = bitmapOptions?.let { imageLoadHelper.loadBitmap(fileName, measuredWidth, measuredHeight, it) }
-        setBitmap(bitmap)
+        val bitmap = bitmapOptions?.let { imageLoadHelper.getPreviewBitmap(fileName, measuredWidth, measuredHeight, it) }
+        setPreviewBitmap(bitmap)
     }
 
     fun setImageResource(resId: Int) {
+        imageUri = null
+        imageAssetName = null
+        imageResId = resId
+        bitmapOptions = imageLoadHelper.getResourceOptions(resId)
 
+        val bitmap = bitmapOptions?.let { imageLoadHelper.getPreviewBitmap(resId, measuredWidth, measuredHeight, it) }
+        setPreviewBitmap(bitmap)
     }
 
     fun setImageUri(uri: Uri) {
+        imageResId = null
+        imageAssetName = null
+        imageUri = uri
+        bitmapOptions = imageLoadHelper.getFileOptions(uri)
 
+        val bitmap = bitmapOptions?.let { imageLoadHelper.getPreviewBitmap(uri, measuredWidth, measuredHeight, it) }
+        setPreviewBitmap(bitmap)
     }
 
-    private fun setBitmap(bitmap: Bitmap?) {
+    private fun setPreviewBitmap(bitmap: Bitmap?) {
         bitmap ?: throw IllegalStateException()
 
         bitmapOptions?.let { options ->
@@ -133,19 +145,19 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         } ?: throw IllegalStateException()
     }
 
-    private fun getOverlay(attrs: TypedArray): CropOverlayView {
+    private fun getOverlay(attr: TypedArray): CropOverlayView {
         return CropOverlayView(
                 context,
-                attrs.getColor(R.styleable.CropView_frameColor, Color.WHITE),
-                attrs.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin)),
-                FrameShape.values()[attrs.getInt(R.styleable.CropView_frameShape, 0)],
-                attrs.getString(R.styleable.CropView_frameRatio)
+                attr.getColor(R.styleable.CropView_frameColor, Color.WHITE),
+                attr.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin)),
+                FrameShape.values()[attr.getInt(R.styleable.CropView_frameShape, 0)],
+                attr.getString(R.styleable.CropView_frameRatio)
                     .parseRatio(),
-                attrs.getDimension(R.styleable.CropView_frameWidth, resources.getDimension(R.dimen.cropView_frameWidth)),
-                attrs.getColor(R.styleable.CropView_gridColor, Color.WHITE),
-                attrs.getInt(R.styleable.CropView_gridRows, 3),
-                attrs.getDimension(R.styleable.CropView_gridWidth, resources.getDimension(R.dimen.cropView_gridWidth)),
-                attrs.getColor(R.styleable.CropView_overlayColor, Color.argb(128, 0, 0, 0))
+                attr.getDimension(R.styleable.CropView_frameWidth, resources.getDimension(R.dimen.cropView_frameWidth)),
+                attr.getColor(R.styleable.CropView_gridColor, Color.WHITE),
+                attr.getInt(R.styleable.CropView_gridRows, 3),
+                attr.getDimension(R.styleable.CropView_gridWidth, resources.getDimension(R.dimen.cropView_gridWidth)),
+                attr.getColor(R.styleable.CropView_overlayColor, Color.argb(128, 0, 0, 0))
         ).apply { isClickable = false }
     }
 

@@ -8,40 +8,55 @@ import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import java.io.InputStream
 import kotlin.math.max
-import kotlin.math.min
 
 class ImageLoadHelper(private val context: Context) {
 
-    fun loadBitmap(
+    fun getAssetOptions(fileName: String): BitmapFactory.Options {
+        return getSourceOptions(context.resources.assets.open(fileName))
+    }
+
+    fun getFileOptions(uri: Uri): BitmapFactory.Options {
+        return getSourceOptions(context.contentResolver.openInputStream(uri))
+    }
+
+    fun getResourceOptions(resId: Int): BitmapFactory.Options {
+        val options = BitmapFactory.Options()
+            .apply { inJustDecodeBounds = true }
+
+        BitmapFactory.decodeResource(context.resources, resId, options)
+        return options
+    }
+
+    fun getPreviewBitmap(
             uri: Uri,
             width: Int,
             height: Int,
             options: BitmapFactory.Options
     ): Bitmap? {
-        return loadBitmap(context.contentResolver.openInputStream(uri), width, height, options)
+        return getPreviewBitmap(context.contentResolver.openInputStream(uri), width, height, options)
     }
 
-    fun loadBitmap(
+    fun getPreviewBitmap(
             assetName: String,
             width: Int,
             height: Int,
             options: BitmapFactory.Options
     ): Bitmap? {
-        return loadBitmap(context.resources.assets.open(assetName), width, height, options)
+        return getPreviewBitmap(context.resources.assets.open(assetName), width, height, options)
     }
 
-    fun loadBitmap(
+    fun getPreviewBitmap(
             resId: Int,
             width: Int,
             height: Int,
             options: BitmapFactory.Options
     ): Bitmap {
-        return BitmapFactory.decodeResource(context.resources, resId, getDecodeOptions(width, height, options))
+        return BitmapFactory.decodeResource(context.resources, resId, getPreviewOptions(width, height, options))
     }
 
-    private fun loadBitmap(inputStream: InputStream?, width: Int, height: Int, options: BitmapFactory.Options): Bitmap? {
+    private fun getPreviewBitmap(inputStream: InputStream?, width: Int, height: Int, options: BitmapFactory.Options): Bitmap? {
         inputStream.use {
-            val source = BitmapFactory.decodeStream(it, null, getDecodeOptions(width, height, options)) ?: return null
+            val source = BitmapFactory.decodeStream(it, null, getPreviewOptions(width, height, options)) ?: return null
 
             val rotation = it?.let { getRotation(ExifInterface(it)) } ?: 0f
             if (rotation != 0f) {
@@ -56,7 +71,15 @@ class ImageLoadHelper(private val context: Context) {
         }
     }
 
-    private fun getDecodeOptions(width: Int, height: Int, options: BitmapFactory.Options): BitmapFactory.Options {
+    private fun getSourceOptions(inputStream: InputStream?): BitmapFactory.Options {
+        val options = BitmapFactory.Options()
+            .apply { inJustDecodeBounds = true }
+
+        inputStream.use { BitmapFactory.decodeStream(it, null, options) }
+        return options
+    }
+
+    private fun getPreviewOptions(width: Int, height: Int, options: BitmapFactory.Options): BitmapFactory.Options {
         val maxSize = max(width, height) * 2
         val maxImageDimen = max(options.outWidth, options.outHeight)
         val bitmapSize = 4 * options.outWidth * options.outHeight
