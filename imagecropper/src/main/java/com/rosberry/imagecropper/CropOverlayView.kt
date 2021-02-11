@@ -14,10 +14,10 @@ internal class CropOverlayView(
         frameMargin: Float,
         frameShape: FrameShape,
         frameRatio: Float,
-        frameStrokeWidth: Float,
+        frameThickness: Float,
         gridColor: Int,
         gridRowCount: Int,
-        gridStrokeWidth: Float,
+        gridThickness: Float,
         overlayColor: Int
 ) : View(context) {
 
@@ -58,7 +58,7 @@ internal class CropOverlayView(
             invalidate()
         }
 
-    var frameStrokeWidth = frameStrokeWidth
+    var frameThickness = frameThickness
         set(value) {
             field = value
             invalidate()
@@ -70,7 +70,7 @@ internal class CropOverlayView(
             invalidate()
         }
 
-    var gridStrokeWidth = gridStrokeWidth
+    var gridThickness = gridThickness
         set(value) {
             field = value
             invalidate()
@@ -182,7 +182,7 @@ internal class CropOverlayView(
             clipPath(clipPath)
             paint.apply {
                 color = gridColor
-                strokeWidth = gridStrokeWidth
+                strokeWidth = gridThickness
             }
             drawLines(gridLines, paint)
             restore()
@@ -192,7 +192,7 @@ internal class CropOverlayView(
     private fun Canvas.drawFrame() {
         paint.apply {
             color = frameColor
-            strokeWidth = frameStrokeWidth
+            strokeWidth = frameThickness
         }
         when (frameShape) {
             FrameShape.RECTANGLE -> drawRect(cropRect, paint)

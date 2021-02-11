@@ -8,10 +8,10 @@
             <enum name="oval" value="1" />
         </attr>
         <attr name="frameRatio" format="string" />
-        <attr name="frameWidth" format="dimension" />
+        <attr name="frameThickness" format="dimension" />
         <attr name="gridColor" format="reference|color" />
         <attr name="gridEnabled" format="boolean" />
-        <attr name="gridWidth" format="dimension" />
+        <attr name="gridThickness" format="dimension" />
         <attr name="gridRows" format="integer" />
         <attr name="overlayColor" format="reference|color" />
         <attr name="scaleFactor" format="float" />

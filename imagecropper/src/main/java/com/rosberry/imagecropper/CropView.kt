@@ -22,6 +22,9 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+/**
+ * View provides image preview, customizable overlay with crop frame and tools to crop images.
+ */
 class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
 
     private val overlayView: CropOverlayView = context.theme
@@ -55,9 +58,9 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     var frameShape: FrameShape by overlayView::frameShape
 
     /**
-     * Crop frame stroke width. Default is 1dp.
+     * Crop frame line thickness in pixels. Default is 1dp.
      */
-    var frameWidth: Float by overlayView::frameStrokeWidth
+    var frameThickness: Float by overlayView::frameThickness
 
     /**
      * Grid lines color. Default is [Color.WHITE].
@@ -72,10 +75,10 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     var gridRows: Int by overlayView::gridRowCount
 
     /**
-     * Grid lines stroke width in pixels. Default is 0.5dp.
+     * Grid line thickness in pixels. Default is 0.5dp.
      * @see gridEnabled
      */
-    var gridWidth: Float by overlayView::gridStrokeWidth
+    var gridThickness: Float by overlayView::gridThickness
 
     /**
      * Color fill outside of the crop area. Default is argb(128, 0, 0, 0).
@@ -86,7 +89,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
      * Controls whether grid should appear on user interaction. Default is false.
      * @see gridRows
      * @see gridColor
-     * @see gridWidth
+     * @see gridThickness
      */
     var gridEnabled = false
 
@@ -231,10 +234,10 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
                 attr.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin)),
                 FrameShape.values()[attr.getInt(R.styleable.CropView_frameShape, 0)],
                 parseRatio(attr.getString(R.styleable.CropView_frameRatio)),
-                attr.getDimension(R.styleable.CropView_frameWidth, resources.getDimension(R.dimen.cropView_frameWidth)),
+                attr.getDimension(R.styleable.CropView_frameThickness, resources.getDimension(R.dimen.cropView_frameThickness)),
                 attr.getColor(R.styleable.CropView_gridColor, Color.WHITE),
                 attr.getInt(R.styleable.CropView_gridRows, 3),
-                attr.getDimension(R.styleable.CropView_gridWidth, resources.getDimension(R.dimen.cropView_gridWidth)),
+                attr.getDimension(R.styleable.CropView_gridThickness, resources.getDimension(R.dimen.cropView_gridThickness)),
                 attr.getColor(R.styleable.CropView_overlayColor, Color.argb(128, 0, 0, 0))
         ).apply { isClickable = false }
     }
