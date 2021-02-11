@@ -71,8 +71,9 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private var isScaling = false
     private var isDragging = false
     private var scale = 1f
+    private var scaleFactor = 4f
     private var minScale = 1f
-    private var maxScale = 4f
+    private var maxScale = minScale * scaleFactor
     private var previewScale = 1f
     private var previewWidth = 0
     private var previewHeight = 0
@@ -84,8 +85,10 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     init {
         context.theme
             .obtainStyledAttributes(attrs, R.styleable.CropView, 0, 0)
-            .use { gridEnabled = it.getBoolean(R.styleable.CropView_gridEnabled, false) }
-
+            .use {
+                gridEnabled = it.getBoolean(R.styleable.CropView_gridEnabled, false)
+                scaleFactor = it.getFloat(R.styleable.CropView_scaleFactor, 4f)
+            }
         addView(imageView)
         addView(overlay)
     }
@@ -182,7 +185,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         bitmapOptions?.let { options ->
             previewScale = options.outWidth / previewWidth.toFloat()
             minScale = max(overlay.frameWidth / previewWidth, overlay.frameHeight / previewHeight)
-            maxScale = minScale * 4
+            maxScale = minScale * scaleFactor
             scale = minScale
             (imageView.layoutParams as LayoutParams).let {
                 it.gravity = Gravity.CENTER

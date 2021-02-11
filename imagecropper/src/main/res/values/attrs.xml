@@ -14,5 +14,6 @@
         <attr name="gridWidth" format="dimension" />
         <attr name="gridRows" format="integer" />
         <attr name="overlayColor" format="reference|color" />
+        <attr name="scaleFactor" format="float" />
     </declare-styleable>
 </resources>
