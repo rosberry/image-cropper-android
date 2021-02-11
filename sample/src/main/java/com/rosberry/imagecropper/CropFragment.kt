@@ -7,9 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import com.rosberry.imagecropper.databinding.FragmentCropperBinding
-import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
 import java.util.Random
 
 class CropFragment : Fragment() {
@@ -46,7 +45,7 @@ class CropFragment : Fragment() {
             buttonGrid.setOnClickListener {
                 cropView.gridRows = random.nextInt(67) + 3
             }
-            view.post { lifecycleScope.launch { cropView.setImageAsset("2053958.jpg") } }
+            view.post { cropView.setImageAsset("2053958.jpg") }
         }
     }
 

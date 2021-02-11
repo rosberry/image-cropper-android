@@ -93,9 +93,9 @@ class Helper(private val context: Context) {
         val bitmapSize = options.getBitmapSize()
         val availableMemory = getAvailableMemory()
         val previewOptions = BitmapFactory.Options()
-        previewOptions.inSampleSize = 1
+        previewOptions.inSampleSize = if (bitmapSize > availableMemory) 2 else 1
 
-        while (maxImageDimen / previewOptions.inSampleSize > maxSize || bitmapSize / previewOptions.inSampleSize > availableMemory) {
+        while (maxImageDimen / previewOptions.inSampleSize > maxSize || bitmapSize / (2 * previewOptions.inSampleSize) > availableMemory) {
             previewOptions.inSampleSize *= 2
         }
 

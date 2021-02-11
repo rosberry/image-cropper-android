@@ -1,3 +1,3 @@
 package com.rosberry.imagecropper
 
-enum class FrameShape { RECT, OVAL }
+enum class FrameShape { RECTANGLE, OVAL }

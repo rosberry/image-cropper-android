@@ -24,38 +24,76 @@ import kotlin.math.roundToInt
 
 class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
 
-    private val overlay: CropOverlayView = context.theme
+    private val overlayView: CropOverlayView = context.theme
         .obtainStyledAttributes(attrs, R.styleable.CropView, 0, 0)
-        .use { getOverlay(it) }
+        .use { getOverlayView(it) }
 
-    var frameColor: Int by overlay::frameColor
+    /**
+     * Crop frame stroke color represented as packed color int. Default is [Color.WHITE].
+     */
+    var frameColor: Int by overlayView::frameColor
 
-    var frameMargin: Float by overlay::frameMargin
+    /**
+     * Minimal distance between view bounds and crop frame in pixels. Default is 24dp.
+     */
+    var frameMargin: Float by overlayView::frameMargin
 
+    /**
+     * Crop frame aspect ratio. Default is 1:1.
+     */
     var frameRatio: Float
-        get() = overlay.ratio
+        get() = overlayView.ratio
         set(value) {
-            overlay.ratio = value
+            overlayView.ratio = value
             calculateScales()
             update(true)
         }
 
-    var frameShape: FrameShape by overlay::frameShape
+    /**
+     * Crop frame shape. Can be either [FrameShape.RECTANGLE] or [FrameShape.OVAL]. Default is [FrameShape.RECTANGLE].
+     */
+    var frameShape: FrameShape by overlayView::frameShape
 
-    var frameWidth: Float by overlay::frameStrokeWidth
+    /**
+     * Crop frame stroke width. Default is 1dp.
+     */
+    var frameWidth: Float by overlayView::frameStrokeWidth
 
-    var gridColor: Int by overlay::gridColor
+    /**
+     * Grid lines color. Default is [Color.WHITE].
+     * @see gridEnabled
+     */
+    var gridColor: Int by overlayView::gridColor
 
-    var gridRows: Int by overlay::gridRowCount
+    /**
+     * Number of grid rows and columns appears on user interaction if grid is enabled. Default is 3.
+     * @see gridEnabled
+     */
+    var gridRows: Int by overlayView::gridRowCount
 
-    var gridWidth: Float by overlay::gridStrokeWidth
+    /**
+     * Grid lines stroke width in pixels. Default is 0.5dp.
+     * @see gridEnabled
+     */
+    var gridWidth: Float by overlayView::gridStrokeWidth
 
-    var overlayColor: Int by overlay::overlayColor
+    /**
+     * Color fill outside of the crop area. Default is argb(128, 0, 0, 0).
+     */
+    var overlayColor: Int by overlayView::overlayColor
 
-    private val xMin: Float get() = (overlay.frameWidth / 2 - imageView.width * scale / 2).coerceAtMost(0f)
-    private val yMin: Float get() = (overlay.frameHeight / 2 - imageView.height * scale / 2).coerceAtMost(0f)
-    private val xMax: Float get() = (imageView.width * scale / 2 - overlay.frameWidth / 2).coerceAtLeast(0f)
-    private val yMax: Float get() = (imageView.height * scale / 2 - overlay.frameHeight / 2).coerceAtLeast(0f)
+    /**
+     * Controls whether grid should appear on user interaction. Default is false.
+     * @see gridRows
+     * @see gridColor
+     * @see gridWidth
+     */
+    var gridEnabled = false
+
+    private val xMin: Float get() = (overlayView.frameWidth / 2 - imageView.width * scale / 2).coerceAtMost(0f)
+    private val yMin: Float get() = (overlayView.frameHeight / 2 - imageView.height * scale / 2).coerceAtMost(0f)
+    private val xMax: Float get() = (imageView.width * scale / 2 - overlayView.frameWidth / 2).coerceAtLeast(0f)
+    private val yMax: Float get() = (imageView.height * scale / 2 - overlayView.frameHeight / 2).coerceAtLeast(0f)
 
     private val helper = Helper(context)
     private val imageView = ImageView(context).apply {
@@ -67,7 +105,6 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private val translation = PointF(0f, 0f)
 
     private var bitmapOptions: BitmapFactory.Options? = null
-    private var gridEnabled = false
     private var isScaling = false
     private var isDragging = false
     private var scale = 1f
@@ -90,9 +127,14 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
                 scaleFactor = it.getFloat(R.styleable.CropView_scaleFactor, 4f)
             }
         addView(imageView)
-        addView(overlay)
+        addView(overlayView)
     }
 
+    /**
+     * Loads image asset with provided file name
+     * @param fileName asset file name
+     * @see android.content.res.AssetManager.open
+     */
     fun setImageAsset(fileName: String) {
         imageUri = null
         imageResId = null
@@ -103,6 +145,11 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         setPreviewBitmap(bitmap)
     }
 
+    /**
+     * Loads image resource with provided id
+     * @param resId resource id
+     * @see android.content.res.Resources.openRawResource
+     */
     fun setImageResource(resId: Int) {
         imageUri = null
         imageAssetName = null
@@ -113,6 +160,11 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         setPreviewBitmap(bitmap)
     }
 
+    /**
+     * Loads image file with provided uri
+     * @param uri file uri
+     * @see android.content.ContentResolver.openInputStream
+     */
     fun setImageUri(uri: Uri) {
         imageResId = null
         imageAssetName = null
@@ -123,6 +175,12 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         setPreviewBitmap(bitmap)
     }
 
+    /**
+     * Crops current loaded image
+     * @return bitmap cropped from original image minimally sampled to prevent OOM exception.
+     * Note that resulting bitmap itself might be too large to be used without resizing.
+     * @see android.graphics.BitmapRegionDecoder.decodeRegion
+     */
     fun crop(): Bitmap? {
         val rect = getCropRect() ?: return null
 
@@ -155,8 +213,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private fun getCropRect(): Rect? {
         return bitmapOptions?.let { options ->
             val relativeScale = previewScale / scale
-            val width = (overlay.frameWidth * relativeScale).toInt()
-            val height = (overlay.frameHeight * relativeScale).toInt()
+            val width = (overlayView.frameWidth * relativeScale).toInt()
+            val height = (overlayView.frameHeight * relativeScale).toInt()
             val relativeLeft = (options.outWidth - width) / 2f
             val relativeTop = (options.outHeight - height) / 2f
             val left = (relativeLeft - translation.x * relativeScale).toInt()
@@ -166,7 +224,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         }
     }
 
-    private fun getOverlay(attr: TypedArray): CropOverlayView {
+    private fun getOverlayView(attr: TypedArray): CropOverlayView {
         return CropOverlayView(
                 context,
                 attr.getColor(R.styleable.CropView_frameColor, Color.WHITE),
@@ -184,7 +242,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private fun calculateScales() {
         bitmapOptions?.let { options ->
             previewScale = options.outWidth / previewWidth.toFloat()
-            minScale = max(overlay.frameWidth / previewWidth, overlay.frameHeight / previewHeight)
+            minScale = max(overlayView.frameWidth / previewWidth, overlayView.frameHeight / previewHeight)
             maxScale = minScale * scaleFactor
             scale = minScale
             (imageView.layoutParams as LayoutParams).let {
@@ -253,7 +311,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     private fun onTouchStart(x: Float, y: Float) {
         if (!isScaling) {
-            if (gridEnabled) overlay.showGrid = true
+            if (gridEnabled) overlayView.showGrid = true
             isDragging = true
             touch.set(x, y)
         }
@@ -269,7 +327,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     private fun onTouchEnd() {
-        if (gridEnabled) overlay.showGrid = false
+        if (gridEnabled) overlayView.showGrid = false
         isDragging = false
         update(true)
     }

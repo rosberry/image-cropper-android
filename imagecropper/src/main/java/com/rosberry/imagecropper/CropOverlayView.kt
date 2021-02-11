@@ -135,7 +135,7 @@ internal class CropOverlayView(
         clipPath.apply {
             reset()
             when (frameShape) {
-                FrameShape.RECT -> addRect(cropRect, Path.Direction.CW)
+                FrameShape.RECTANGLE -> addRect(cropRect, Path.Direction.CW)
                 FrameShape.OVAL -> addOval(cropRect, Path.Direction.CW)
             }
         }
@@ -195,7 +195,7 @@ internal class CropOverlayView(
             strokeWidth = frameStrokeWidth
         }
         when (frameShape) {
-            FrameShape.RECT -> drawRect(cropRect, paint)
+            FrameShape.RECTANGLE -> drawRect(cropRect, paint)
             FrameShape.OVAL -> drawOval(cropRect, paint)
         }
     }
