@@ -25,26 +25,14 @@ class Helper(private val context: Context) {
 
     fun getCroppedBitmap(resId: Int, cropRect: Rect): Bitmap? = getCroppedBitmap(getResourceStream(resId), cropRect)
 
-    fun getPreviewBitmap(
-            uri: Uri,
-            width: Int,
-            height: Int,
-            options: BitmapFactory.Options
-    ): Bitmap? = getPreviewBitmap(getFileStream(uri), width, height, options)
+    fun getPreviewBitmap(uri: Uri, width: Int, height: Int, options: BitmapFactory.Options): Bitmap? =
+            getPreviewBitmap(getFileStream(uri), width, height, options)
 
-    fun getPreviewBitmap(
-            fileName: String,
-            width: Int,
-            height: Int,
-            options: BitmapFactory.Options
-    ): Bitmap? = getPreviewBitmap(getAssetStream(fileName), width, height, options)
+    fun getPreviewBitmap(fileName: String, width: Int, height: Int, options: BitmapFactory.Options): Bitmap? =
+            getPreviewBitmap(getAssetStream(fileName), width, height, options)
 
-    fun getPreviewBitmap(
-            resId: Int,
-            width: Int,
-            height: Int,
-            options: BitmapFactory.Options
-    ): Bitmap? = getPreviewBitmap(getResourceStream(resId), width, height, options)
+    fun getPreviewBitmap(resId: Int, width: Int, height: Int, options: BitmapFactory.Options): Bitmap? =
+            getPreviewBitmap(getResourceStream(resId), width, height, options)
 
     private fun getDecodeOptions(inputStream: InputStream?): BitmapFactory.Options {
         return createDecodeOptions().apply {
@@ -65,8 +53,17 @@ class Helper(private val context: Context) {
 
     private fun getCroppedBitmap(inputStream: InputStream?, cropRect: Rect): Bitmap? {
         inputStream.use {
+            val bitmapSize = 4 * cropRect.width() * cropRect.height()
+            val availableMemory = getAvailableMemory()
+            val options = BitmapFactory.Options()
+            options.inSampleSize = if (bitmapSize > availableMemory) 2 else 1
+
+            while (bitmapSize / (2 * options.inSampleSize) > availableMemory) {
+                options.inSampleSize *= 2
+            }
+
             val decoder = BitmapRegionDecoder.newInstance(it, false)
-            val bitmap = decoder.decodeRegion(cropRect, null)
+            val bitmap = decoder.decodeRegion(cropRect, options)
 
             decoder.recycle()
             return bitmap
@@ -93,18 +90,19 @@ class Helper(private val context: Context) {
     private fun getPreviewOptions(width: Int, height: Int, options: BitmapFactory.Options): BitmapFactory.Options {
         val maxSize = max(width, height) * 2
         val maxImageDimen = max(options.outWidth, options.outHeight)
-        val bitmapSize = 4 * options.outWidth * options.outHeight
-        val runtime = Runtime.getRuntime()
-        val availableMemory = runtime.maxMemory() - (runtime.totalMemory() - runtime.freeMemory())
-        var inSampleSize = 1
+        val bitmapSize = options.getBitmapSize()
+        val availableMemory = getAvailableMemory()
+        val previewOptions = BitmapFactory.Options()
+        previewOptions.inSampleSize = 1
 
-        while (maxImageDimen / inSampleSize > maxSize || bitmapSize / (2 * inSampleSize) > availableMemory) {
-            inSampleSize *= 2
+        while (maxImageDimen / previewOptions.inSampleSize > maxSize || bitmapSize / previewOptions.inSampleSize > availableMemory) {
+            previewOptions.inSampleSize *= 2
         }
 
-        return BitmapFactory.Options()
-            .apply { this.inSampleSize = inSampleSize }
+        return previewOptions
     }
+
+    private fun getAvailableMemory(): Long = with(Runtime.getRuntime()) { maxMemory() - (totalMemory() - freeMemory()) }
 
     private fun getRotation(exif: ExifInterface): Float {
         return when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
@@ -114,4 +112,6 @@ class Helper(private val context: Context) {
             else -> 0f
         }
     }
+
+    private fun BitmapFactory.Options.getBitmapSize(): Int = 4 * outWidth * outHeight
 }

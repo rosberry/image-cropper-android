@@ -169,8 +169,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
                 attr.getColor(R.styleable.CropView_frameColor, Color.WHITE),
                 attr.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin)),
                 FrameShape.values()[attr.getInt(R.styleable.CropView_frameShape, 0)],
-                attr.getString(R.styleable.CropView_frameRatio)
-                    .parseRatio(),
+                parseRatio(attr.getString(R.styleable.CropView_frameRatio)),
                 attr.getDimension(R.styleable.CropView_frameWidth, resources.getDimension(R.dimen.cropView_frameWidth)),
                 attr.getColor(R.styleable.CropView_gridColor, Color.WHITE),
                 attr.getInt(R.styleable.CropView_gridRows, 3),
@@ -285,9 +284,9 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         }
     }
 
-    private fun String?.parseRatio(): Float {
+    private fun parseRatio(ratio: String?): Float {
         return try {
-            this?.split(':')
+            ratio?.split(':')
                 ?.let { it[0].toFloat() / it[1].toFloat() }
                 ?: 1f
         } catch (e: Exception) {
