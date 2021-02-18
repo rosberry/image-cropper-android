@@ -12,7 +12,7 @@ Android API 21+
 ## Usage
 Include dependency:
 ```groovy
-//TODO
+implementation 'com.rosberry.android.imagecropper:1.0'
 ```
 
 Add view to layout:
