@@ -4,6 +4,6 @@
  *
  */
 
-package com.rosberry.imagecropper
+package com.rosberry.android.imagecropper
 
 enum class FrameShape { RECTANGLE, OVAL }

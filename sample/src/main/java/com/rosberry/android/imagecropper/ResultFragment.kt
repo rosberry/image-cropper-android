@@ -1,4 +1,4 @@
-package com.rosberry.imagecropper
+package com.rosberry.android.imagecropper
 
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.rosberry.imagecropper.databinding.FragmentResultBinding
+import com.rosberry.android.imagecropper.databinding.FragmentResultBinding
 
 class ResultFragment private constructor() : Fragment() {
 

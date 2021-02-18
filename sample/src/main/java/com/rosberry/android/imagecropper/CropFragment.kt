@@ -1,4 +1,4 @@
-package com.rosberry.imagecropper
+package com.rosberry.android.imagecropper
 
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -7,8 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.rosberry.imagecropper.databinding.FragmentCropperBinding
-import java.io.FileNotFoundException
+import com.rosberry.android.imagecropper.databinding.FragmentCropperBinding
 import java.util.Random
 
 class CropFragment : Fragment() {

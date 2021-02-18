@@ -1,9 +1,9 @@
-package com.rosberry.imagecropper
+package com.rosberry.android.imagecropper
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
-import com.rosberry.imagecropper.databinding.ActivityMainBinding
+import com.rosberry.android.imagecropper.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 

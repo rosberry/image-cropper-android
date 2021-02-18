@@ -17,7 +17,7 @@ Include dependency:
 
 Add view to layout:
 ```xml
-<com.rosberry.imagecropper.CropView android:id="@+id/cropView"
+<com.rosberry.android.imagecropper.CropView android:id="@+id/cropView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 ```

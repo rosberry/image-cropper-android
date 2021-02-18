@@ -8,7 +8,7 @@ android {
     buildToolsVersion "30.0.3"
 
     defaultConfig {
-        applicationId "com.rosberry.imagecropper"
+        applicationId "com.rosberry.android.imagecropper"
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 1
@@ -36,7 +36,7 @@ android {
 }
 
 dependencies {
-    implementation project(':imagecropper')
+    implementation project(':library')
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.3.2'
     implementation 'androidx.appcompat:appcompat:1.2.0'

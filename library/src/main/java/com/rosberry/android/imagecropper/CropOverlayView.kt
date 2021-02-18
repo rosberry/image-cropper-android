@@ -4,7 +4,7 @@
  *
  */
 
-package com.rosberry.imagecropper
+package com.rosberry.android.imagecropper
 
 import android.content.Context
 import android.graphics.Canvas

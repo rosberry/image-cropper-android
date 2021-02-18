@@ -4,7 +4,7 @@
  *
  */
 
-package com.rosberry.imagecropper
+package com.rosberry.android.imagecropper
 
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
@@ -13,7 +13,6 @@ import android.content.Context
 import android.content.res.TypedArray
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.Rect
 import android.net.Uri
