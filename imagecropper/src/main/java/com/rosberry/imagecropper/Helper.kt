@@ -1,3 +1,9 @@
+/*
+ *
+ *  * Copyright (c) 2021 Rosberry. All rights reserved.
+ *
+ */
+
 package com.rosberry.imagecropper
 
 import android.content.Context
@@ -63,7 +69,12 @@ class Helper(private val context: Context) {
             }
 
             val decoder = BitmapRegionDecoder.newInstance(it, false)
-            val bitmap = decoder.decodeRegion(cropRect, options)
+            val bitmap = try {
+                decoder.decodeRegion(cropRect, options)
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+                null
+            }
 
             decoder.recycle()
             return bitmap

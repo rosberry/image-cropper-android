@@ -45,19 +45,19 @@ val bitmap = cropView.crop()
 it still can appear too large for immediate use especially when working with large sources.
 
 View appearance can be customized in layout xml or updated in runtime.
-Avaimable parameters listed in the table below:
+Available parameters listed in the table below:
 | attribute      | attribute format    | property type  | default value  |
 |----------------|---------------------|----------------|----------------|
-| frameColor     | reference \| color  | Int            | white          |
-| frameMargin    | dimension           | Float          | 24dp           |
+| frameColor     | reference \| color  | Int            | #FFF           |
+| frameMargin    | dimension           | Float          | 16dp           |
 | frameShape     | enum { oval, rect } | FrameShape     | rect           |
 | frameRatio     | string              | Float          | 1:1            |
 | frameThickness | dimension           | Float          | 1dp            |
-| gridColor      | reference \| color  | Int            | white          |
+| gridColor      | reference \| color  | Int            | #FFF           |
 | gridEnabled    | boolean             | Boolean        | false          |
-| gridThickness  | dimension           | Float          | 0.5dp          |
+| gridThickness  | dimension           | Float          | 1dp            |
 | gridRows       | integer             | Int            | 3              |
-| overlayColor   | reference \| color  | Int            | (127, 0, 0, 0) |
+| overlayColor   | reference \| color  | Int            | #CC000000      |
 | scaleFactor    | float               | _Unsupported_  | 4              |
 
 ## Authors

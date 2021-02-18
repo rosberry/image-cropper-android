@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="cropView_frameMargin" type="dimen">24dp</item>
+    <item name="cropView_frameMargin" type="dimen">16dp</item>
     <item name="cropView_frameThickness" type="dimen">1dp</item>
-    <item name="cropView_gridThickness" type="dimen">0.5dp</item>
+    <item name="cropView_gridThickness" type="dimen">1dp</item>
 </resources>

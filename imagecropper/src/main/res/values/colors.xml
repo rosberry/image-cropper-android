@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cropView_colorFrame">#FFF</color>
+    <color name="cropView_colorGrid">#FFF</color>
+    <color name="cropView_colorOverlay">#CC000000</color>
+</resources>

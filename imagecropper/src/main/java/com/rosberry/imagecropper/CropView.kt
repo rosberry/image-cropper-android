@@ -1,3 +1,9 @@
+/*
+ *
+ *  * Copyright (c) 2021 Rosberry. All rights reserved.
+ *
+ */
+
 package com.rosberry.imagecropper
 
 import android.animation.AnimatorSet
@@ -17,6 +23,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.widget.FrameLayout
 import android.widget.ImageView
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.use
 import kotlin.math.max
 import kotlin.math.min
@@ -32,12 +39,12 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         .use { getOverlayView(it) }
 
     /**
-     * Crop frame stroke color represented as packed color int. Default is [Color.WHITE].
+     * Crop frame stroke color represented as packed color int. Default is #FFF.
      */
     var frameColor: Int by overlayView::frameColor
 
     /**
-     * Minimal distance between view bounds and crop frame in pixels. Default is 24dp.
+     * Minimal distance between view bounds and crop frame in pixels. Default is 16dp.
      */
     var frameMargin: Float by overlayView::frameMargin
 
@@ -63,7 +70,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     var frameThickness: Float by overlayView::frameThickness
 
     /**
-     * Grid lines color. Default is [Color.WHITE].
+     * Grid lines color. Default is #FFF.
      * @see gridEnabled
      */
     var gridColor: Int by overlayView::gridColor
@@ -81,7 +88,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     var gridThickness: Float by overlayView::gridThickness
 
     /**
-     * Color fill outside of the crop area. Default is argb(128, 0, 0, 0).
+     * Color fill outside of the crop area. Default is #CC000000.
      */
     var overlayColor: Int by overlayView::overlayColor
 
@@ -134,7 +141,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     /**
-     * Loads image asset with provided file name
+     * Loads image asset with provided file name.
      * @param fileName asset file name
      * @see android.content.res.AssetManager.open
      */
@@ -149,7 +156,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     /**
-     * Loads image resource with provided id
+     * Loads image resource with provided id.
      * @param resId resource id
      * @see android.content.res.Resources.openRawResource
      */
@@ -164,7 +171,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     /**
-     * Loads image file with provided uri
+     * Loads image file with provided uri.
      * @param uri file uri
      * @see android.content.ContentResolver.openInputStream
      */
@@ -179,9 +186,9 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     /**
-     * Crops current loaded image
-     * @return bitmap cropped from original image minimally sampled to prevent OOM exception.
-     * Note that resulting bitmap itself might be too large to be used without resizing.
+     * Crops current loaded image applying minimum downsampling to prevent OOM exception.
+     * Note that resulting bitmap might be too large to be used without resizing.
+     * @return bitmap cropped from original image or null if selected region decoding fails
      * @see android.graphics.BitmapRegionDecoder.decodeRegion
      */
     fun crop(): Bitmap? {
@@ -229,16 +236,16 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     private fun getOverlayView(attr: TypedArray): CropOverlayView {
         return CropOverlayView(
-                context,
-                attr.getColor(R.styleable.CropView_frameColor, Color.WHITE),
-                attr.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin)),
-                FrameShape.values()[attr.getInt(R.styleable.CropView_frameShape, 0)],
-                parseRatio(attr.getString(R.styleable.CropView_frameRatio)),
-                attr.getDimension(R.styleable.CropView_frameThickness, resources.getDimension(R.dimen.cropView_frameThickness)),
-                attr.getColor(R.styleable.CropView_gridColor, Color.WHITE),
-                attr.getInt(R.styleable.CropView_gridRows, 3),
-                attr.getDimension(R.styleable.CropView_gridThickness, resources.getDimension(R.dimen.cropView_gridThickness)),
-                attr.getColor(R.styleable.CropView_overlayColor, Color.argb(128, 0, 0, 0))
+                context = context,
+                frameColor = attr.getColor(R.styleable.CropView_frameColor, ContextCompat.getColor(context, R.color.cropView_colorGrid)),
+                frameMargin = attr.getDimension(R.styleable.CropView_frameMargin, resources.getDimension(R.dimen.cropView_frameMargin)),
+                frameShape = FrameShape.values()[attr.getInt(R.styleable.CropView_frameShape, 0)],
+                frameRatio = parseRatio(attr.getString(R.styleable.CropView_frameRatio)),
+                frameThickness = attr.getDimension(R.styleable.CropView_frameThickness, resources.getDimension(R.dimen.cropView_frameThickness)),
+                gridColor = attr.getColor(R.styleable.CropView_gridColor, ContextCompat.getColor(context, R.color.cropView_colorGrid)),
+                gridRowCount = attr.getInt(R.styleable.CropView_gridRows, 3),
+                gridThickness = attr.getDimension(R.styleable.CropView_gridThickness, resources.getDimension(R.dimen.cropView_gridThickness)),
+                overlayColor = attr.getColor(R.styleable.CropView_overlayColor, ContextCompat.getColor(context, R.color.cropView_colorOverlay))
         ).apply { isClickable = false }
     }
 
@@ -351,9 +358,13 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private fun parseRatio(ratio: String?): Float {
         return try {
             ratio?.split(':')
-                ?.let { it[0].toFloat() / it[1].toFloat() }
-                ?: 1f
-        } catch (e: Exception) {
+                ?.let {
+                    val width = it[0].toFloat()
+                    val height = it.getOrNull(1)?.toFloat() ?: 1f
+
+                    width / height
+                } ?: 1f
+        } catch (e: NumberFormatException) {
             1f
         }
     }
