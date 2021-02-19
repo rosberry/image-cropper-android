@@ -114,8 +114,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private val translation = PointF(0f, 0f)
 
     private var bitmapOptions: BitmapFactory.Options? = null
-    private var isScaling = false
-    private var isDragging = false
+    private var state = State.IDLE
     private var scale = 1f
     private var scaleFactor = 4f
     private var minScale = 1f
@@ -319,25 +318,23 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     private fun onTouchStart(x: Float, y: Float) {
-        if (!isScaling) {
+        if (state == State.IDLE) {
             if (gridEnabled) overlayView.showGrid = true
-            isDragging = true
+            state = State.DRAG
             touch.set(x, y)
         }
     }
 
     private fun onTouchMove(x: Float, y: Float) {
-        if (isDragging) {
-            if (!isScaling) {
-                translation.add(x - touch.x, y - touch.y)
-            }
+        if (state == State.DRAG) {
+            translation.add(x - touch.x, y - touch.y)
             touch.set(x, y)
         }
     }
 
     private fun onTouchEnd() {
         if (gridEnabled) overlayView.showGrid = false
-        isDragging = false
+        state = State.IDLE
         update(true)
     }
 
@@ -359,7 +356,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
             ratio?.split(':')
                 ?.let {
                     val width = it[0].toFloat()
-                    val height = it.getOrNull(1)?.toFloat() ?: 1f
+                    val height = it.getOrNull(1)
+                        ?.toFloat() ?: 1f
 
                     width / height
                 } ?: 1f
@@ -371,8 +369,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
-            isDragging = false
-            isScaling = true
+            state = State.SCALE
             return true
         }
 
@@ -384,7 +381,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         }
 
         override fun onScaleEnd(detector: ScaleGestureDetector?) {
-            isScaling = false
+            state = State.IDLE
         }
     }
 }

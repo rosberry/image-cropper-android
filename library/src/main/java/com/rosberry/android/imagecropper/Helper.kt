@@ -17,7 +17,7 @@ import androidx.exifinterface.media.ExifInterface
 import java.io.InputStream
 import kotlin.math.max
 
-class Helper(private val context: Context) {
+internal class Helper(private val context: Context) {
 
     fun getDecodeOptions(fileName: String): BitmapFactory.Options = getDecodeOptions(getAssetStream(fileName))
 
