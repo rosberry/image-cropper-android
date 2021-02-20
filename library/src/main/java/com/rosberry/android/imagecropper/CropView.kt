@@ -23,6 +23,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.use
+import java.io.IOException
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -135,8 +136,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     /**
      * Loads image asset with provided file name.
+     * If the file with provided `fileName` could not be opened [IOException] will be thrown.
      * @param fileName asset file name
-     * @see android.content.res.AssetManager.open
      */
     fun setImageAsset(fileName: String) {
         source = AssetSource(context, fileName)
@@ -145,8 +146,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     /**
      * Loads image resource with provided id.
+     * If the given `resId` does not exist [android.content.res.Resources.NotFoundException] will be thrown.
      * @param resId resource id
-     * @see android.content.res.Resources.openRawResource
      */
     fun setImageResource(resId: Int) {
         source = ResourceSource(context, resId)
@@ -155,8 +156,8 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
     /**
      * Loads image file with provided uri.
+     * If the provided `uri` could not be opened [java.io.FileNotFoundException] will be thrown.
      * @param uri file uri
-     * @see android.content.ContentResolver.openInputStream
      */
     fun setImageUri(uri: Uri) {
         source = MediaSource(context, uri)
@@ -166,11 +167,17 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     /**
      * Crops current loaded image applying minimum downsampling to prevent OOM exception.
      * Note that resulting bitmap might be too large to be used without resizing.
-     * @return bitmap cropped from original image or null if selected region decoding fails
+     * @return `bitmap` cropped from original image or `null` if selected region decoding fails
+     * @throws IllegalStateException if no image source set
+     * @see setImageAsset
+     * @see setImageResource
+     * @see setImageUri
      * @see android.graphics.BitmapRegionDecoder.decodeRegion
      */
     fun crop(): Bitmap? {
-        return source?.run {
+        return source.run {
+            this ?: throw IllegalStateException("Image source must be set before applying crop.")
+
             val rect = getCropRect(this)
             getCroppedBitmap(rect)
         }
