@@ -208,9 +208,9 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
             }
 
             calculateScales()
-            update(true)
             post {
                 imageView.setImageBitmap(bitmap)
+                update(true)
                 callback?.onImageLoaded()
             }
         }
