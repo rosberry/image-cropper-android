@@ -6,6 +6,7 @@
 
 package com.rosberry.android.imagecropper
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -14,6 +15,7 @@ import android.graphics.RectF
 import android.graphics.Region
 import android.view.View
 
+@SuppressLint("ViewConstructor")
 internal class CropOverlayView(
         context: Context,
         frameColor: Int,
