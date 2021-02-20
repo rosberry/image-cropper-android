@@ -4,30 +4,29 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
     android:animateLayoutChanges="true"
+    android:background="@color/black"
     tools:ignore="HardcodedText">
 
     <com.rosberry.android.imagecropper.CropView android:id="@+id/cropView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:gridEnabled="true"
         android:visibility="invisible"
+        app:gridEnabled="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.appcompat.widget.AppCompatButton android:id="@+id/buttonColor"
-        android:layout_width="100dp"
+        android:layout_width="80dp"
         android:layout_height="50dp"
-        android:layout_marginStart="16dp"
         android:text="Color"
-        app:layout_constraintBottom_toTopOf="@id/buttonShape"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintBottom_toTopOf="@id/buttonGrid"
+        app:layout_constraintStart_toEndOf="@id/buttonShape" />
 
     <androidx.appcompat.widget.AppCompatButton android:id="@+id/buttonShape"
-        android:layout_width="100dp"
+        android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_marginStart="16dp"
         android:text="Shape"
@@ -35,7 +34,7 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <androidx.appcompat.widget.AppCompatButton android:id="@+id/buttonRatio"
-        android:layout_width="100dp"
+        android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_margin="16dp"
         android:text="Ratio"
@@ -43,10 +42,18 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <androidx.appcompat.widget.AppCompatButton android:id="@+id/buttonGrid"
-        android:layout_width="100dp"
+        android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_marginBottom="16dp"
         android:text="Grid"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/buttonRatio" />
+
+    <androidx.appcompat.widget.AppCompatButton android:id="@+id/buttonCrop"
+        android:layout_width="80dp"
+        android:layout_height="50dp"
+        android:layout_margin="16dp"
+        android:text="Crop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

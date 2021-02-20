@@ -1,15 +1,17 @@
 package com.rosberry.android.imagecropper
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.Fragment
+import com.rosberry.android.imagecropper.crop.CropFragment
 import com.rosberry.android.imagecropper.databinding.ActivityMainBinding
-import kotlinx.coroutines.launch
+import com.rosberry.android.imagecropper.gallery.GalleryFragment
+import com.rosberry.android.imagecropper.result.ResultFragment
+import com.rosberry.android.imagecropper.result.SampleFragment
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
-
-    private val tagCrop = "crop"
 
     private lateinit var binding: ActivityMainBinding
 
@@ -17,39 +19,36 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
-
         setContentView(binding.root)
 
-        binding.buttonApply.setOnClickListener {
-            lifecycleScope.launch {
-                (supportFragmentManager.findFragmentByTag(tagCrop) as? CropFragment)
-                    ?.getCroppedImage()
-                    ?.apply {
-                        supportFragmentManager
-                            .beginTransaction()
-                            .replace(binding.appContainer.id, ResultFragment.getInstance(this))
-                            .commitNow()
+        if (savedInstanceState == null) setCropFragment()
+    }
 
-                        binding.buttonBack.isVisible = true
-                        binding.buttonApply.isVisible = false
-                    }
-            }
-        }
+    fun onImageSelected(uri: Uri) {
+        addFragment(CropFragment.getInstance(uri))
+    }
 
-        binding.buttonBack.setOnClickListener {
-            setCropFragment()
-        }
-
-        setCropFragment()
+    fun onImageCropped(file: File) {
+        addFragment(ResultFragment.getInstance(file))
     }
 
     private fun setCropFragment() {
         supportFragmentManager
             .beginTransaction()
-            .replace(binding.appContainer.id, CropFragment(), tagCrop)
+            .replace(binding.appContainer.id, GalleryFragment())
             .commitNow()
+    }
 
-        binding.buttonBack.isVisible = false
-        binding.buttonApply.isVisible = true
+    private fun addFragment(fragment: Fragment) {
+        supportFragmentManager
+            .beginTransaction()
+            .replace(binding.appContainer.id, fragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    override fun onBackPressed() {
+        if ((supportFragmentManager.fragments[0] as? SampleFragment)?.onBackPressed() == true) return
+        super.onBackPressed()
     }
 }

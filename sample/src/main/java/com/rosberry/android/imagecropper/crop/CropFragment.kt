@@ -1,21 +1,35 @@
-package com.rosberry.android.imagecropper
+package com.rosberry.android.imagecropper.crop
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.rosberry.android.imagecropper.FrameShape
+import com.rosberry.android.imagecropper.ImageLoadCallback
+import com.rosberry.android.imagecropper.MainActivity
 import com.rosberry.android.imagecropper.databinding.FragmentCropperBinding
+import com.rosberry.android.imagecropper.result.SampleFragment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import java.util.Random
 
-class CropFragment : Fragment(), ImageLoadCallback {
+class CropFragment : SampleFragment(), ImageLoadCallback {
+
+    companion object {
+
+        fun getInstance(uri: Uri): CropFragment {
+            return CropFragment().apply { arguments = bundleOf("uri" to uri) }
+        }
+    }
 
     private val random by lazy { Random() }
 
@@ -50,12 +64,23 @@ class CropFragment : Fragment(), ImageLoadCallback {
             buttonGrid.setOnClickListener {
                 cropView.gridRows = random.nextInt(67) + 3
             }
-            view.post { lifecycleScope.launch { withContext(Dispatchers.IO) { cropView.setImageAsset("2053958.jpg") } } }
+            buttonCrop.setOnClickListener {
+                lifecycleScope.launch { getCroppedImage() }
+            }
+            view.post { lifecycleScope.launch { withContext(Dispatchers.IO) { cropView.setImageUri(requireArguments().get("uri") as Uri) } } }
         }
     }
 
-    suspend fun getCroppedImage(): Bitmap? {
-        return withContext(Dispatchers.IO) { binding.cropView.crop() }
+    private suspend fun getCroppedImage() {
+        val file = withContext(Dispatchers.IO) {
+            val bitmap = binding.cropView.crop() ?: return@withContext null
+            val file = File.createTempFile("${System.currentTimeMillis()}", ".jpg")
+
+            FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it) }
+            return@withContext file
+        } ?: return
+
+        (requireActivity() as MainActivity).onImageCropped(file)
     }
 
     override fun onImageLoaded() {

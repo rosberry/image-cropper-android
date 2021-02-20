@@ -1,3 +1,5 @@
 include ':library'
+include ':mediaprovider'
+include ':gallerypicker'
 include ':sample'
 rootProject.name = "Image Cropper"
