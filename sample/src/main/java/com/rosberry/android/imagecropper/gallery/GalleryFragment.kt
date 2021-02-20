@@ -46,17 +46,17 @@ class GalleryFragment : SampleFragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        if ((ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)) {
-            viewModel.getMedia()
-        } else {
-            ActivityCompat.requestPermissions(requireActivity(), readStoragePermission, readStoragePermissionCode)
-        }
-
         lifecycleScope.launch { viewModel.media.collect { galleryPicker.setItems(it) } }
         lifecycleScope.launch { viewModel.isSelecting.collect { galleryPicker.isSelecting = it } }
         lifecycleScope.launch { viewModel.onSelect.collect { (requireActivity() as MainActivity).onImageSelected(it.uri) } }
 
         galleryPicker.attachToRecyclerView(binding.listMedia)
+
+        if ((ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)) {
+            viewModel.getMedia()
+        } else {
+            requestPermissions(readStoragePermission, readStoragePermissionCode)
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
