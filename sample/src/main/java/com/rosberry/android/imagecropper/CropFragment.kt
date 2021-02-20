@@ -6,11 +6,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.rosberry.android.imagecropper.databinding.FragmentCropperBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Random
 
-class CropFragment : Fragment() {
+class CropFragment : Fragment(), ImageLoadCallback {
 
     private val random by lazy { Random() }
 
@@ -28,6 +33,7 @@ class CropFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.apply {
+            cropView.setCallback(this@CropFragment)
             buttonColor.setOnClickListener {
                 cropView.overlayColor = Color.argb(127, random.nextInt(256), random.nextInt(256), random.nextInt(256))
                 cropView.frameColor = Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256))
@@ -44,11 +50,15 @@ class CropFragment : Fragment() {
             buttonGrid.setOnClickListener {
                 cropView.gridRows = random.nextInt(67) + 3
             }
-            view.post { cropView.setImageAsset("2053958.jpg") }
+            view.post { lifecycleScope.launch { withContext(Dispatchers.IO) { cropView.setImageAsset("2053958.jpg") } } }
         }
     }
 
-    fun getCroppedImage(): Bitmap? {
-        return binding.cropView.crop()
+    suspend fun getCroppedImage(): Bitmap? {
+        return withContext(Dispatchers.IO) { binding.cropView.crop() }
+    }
+
+    override fun onImageLoaded() {
+        binding.cropView.isVisible = true
     }
 }

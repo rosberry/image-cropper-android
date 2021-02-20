@@ -3,7 +3,9 @@ package com.rosberry.android.imagecropper
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.rosberry.android.imagecropper.databinding.ActivityMainBinding
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,17 +21,19 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.buttonApply.setOnClickListener {
-            (supportFragmentManager.findFragmentByTag(tagCrop) as? CropFragment)
-                ?.getCroppedImage()
-                ?.apply {
-                    supportFragmentManager
-                        .beginTransaction()
-                        .replace(binding.appContainer.id, ResultFragment.getInstance(this))
-                        .commitNow()
+            lifecycleScope.launch {
+                (supportFragmentManager.findFragmentByTag(tagCrop) as? CropFragment)
+                    ?.getCroppedImage()
+                    ?.apply {
+                        supportFragmentManager
+                            .beginTransaction()
+                            .replace(binding.appContainer.id, ResultFragment.getInstance(this))
+                            .commitNow()
 
-                    binding.buttonBack.isVisible = true
-                    binding.buttonApply.isVisible = false
-                }
+                        binding.buttonBack.isVisible = true
+                        binding.buttonApply.isVisible = false
+                    }
+            }
         }
 
         binding.buttonBack.setOnClickListener {

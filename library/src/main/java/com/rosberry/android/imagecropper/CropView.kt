@@ -122,6 +122,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private var previewHeight = 0
 
     private var source: ImageSource<*>? = null
+    private var callback: ImageLoadCallback? = null
 
     init {
         context.theme
@@ -132,6 +133,15 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
             }
         addView(imageView)
         addView(overlayView)
+    }
+
+    /**
+     * Registers callback to be invoked when image preview is set. Mainly for cases when
+     * update layout after image loaded is necessary (e.g. change view visibility or show controls).
+     * Note that callback will be invoked on main thread.
+     */
+    fun setCallback(callback: ImageLoadCallback?) {
+        this.callback = callback
     }
 
     /**
@@ -199,7 +209,10 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
 
             calculateScales()
             update(true)
-            post { imageView.setImageBitmap(bitmap) }
+            post {
+                imageView.setImageBitmap(bitmap)
+                callback?.onImageLoaded()
+            }
         }
     }
 
