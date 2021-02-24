@@ -187,11 +187,10 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
             this ?: throw IllegalStateException("Image source must be set before applying crop.")
 
             getCroppedBitmap(
-                    previewWidth,
+                    previewWidth * scale,
                     overlayView.frameWidth,
                     overlayView.frameHeight,
-                    translation,
-                    scale
+                    translation
             )
         }
     }

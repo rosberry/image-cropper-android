@@ -42,6 +42,7 @@ internal class ResourceSource(context: Context, private val resId: Int) : ImageS
 }
 
 sealed class ImageSource<T : Any>(protected val context: Context) {
+
     val options by lazy {
         BitmapFactory.Options()
             .apply {
@@ -68,13 +69,13 @@ sealed class ImageSource<T : Any>(protected val context: Context) {
         }
     }
 
-    fun getCroppedBitmap(previewWidth: Int, frameWidth: Float, frameHeight: Float, translation: PointF, imageScale: Float): Bitmap? {
-        val cropRect = getCropRect(previewWidth, frameWidth, frameHeight, translation, imageScale)
+    fun getCroppedBitmap(previewWidth: Float, frameWidth: Float, frameHeight: Float, translation: PointF): Bitmap? {
+        val cropRect = getCropRect(previewWidth, frameWidth, frameHeight, translation)
 
         inputStream.use {
             val options = getCropOptions(cropRect)
             val decoder = BitmapRegionDecoder.newInstance(it, false)
-            val bitmap = try {
+            var bitmap = try {
                 decoder.decodeRegion(cropRect, options)
             } catch (e: IllegalArgumentException) {
                 e.printStackTrace()
@@ -82,6 +83,11 @@ sealed class ImageSource<T : Any>(protected val context: Context) {
             }
 
             decoder.recycle()
+
+            if (bitmap != null && rotation != 0f) {
+                val matrix = Matrix().apply { postRotate(rotation) }
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            }
             return bitmap
         }
     }
@@ -123,18 +129,41 @@ sealed class ImageSource<T : Any>(protected val context: Context) {
         return options
     }
 
-    private fun getCropRect(previewWidth: Int, frameWidth: Float, frameHeight: Float, translation: PointF, imageScale: Float): Rect {
-        val imageWidth = if (rotation == 90f || rotation == 270f) options.outHeight else options.outWidth
-        val previewScale = imageWidth / previewWidth.toFloat()
-        val scale = previewScale / imageScale
-        val width = (frameWidth * scale).toInt()
-        val height = (frameHeight * scale).toInt()
-        val x0 = (options.outWidth - width) / 2f
-        val y0 = (options.outHeight - height) / 2f
-        val left = (x0 - translation.x * scale).toInt()
-        val top = (y0 - translation.y * scale).toInt()
+    private fun getCropRect(previewWidth: Float, frameWidth: Float, frameHeight: Float, translation: PointF): Rect {
+        val left: Int
+        val top: Int
 
-        return Rect(left, top, left + width, top + height)
+        val imageWidth = if (rotation == 90f || rotation == 270f) options.outHeight else options.outWidth
+        val imageHeight = if (rotation == 90f || rotation == 270f) options.outWidth else options.outHeight
+        val scale = imageWidth / previewWidth
+        val cropWidth = (frameWidth * scale).toInt()
+        val cropHeight = (frameHeight * scale).toInt()
+        val x0 = (imageWidth - cropWidth) / 2f
+        val y0 = (imageHeight - cropHeight) / 2f
+
+        when (rotation) {
+            90f -> {
+                left = (y0 - translation.y * scale).toInt()
+                top = (x0 + translation.x * scale).toInt()
+            }
+            180f -> {
+                left = (x0 + translation.x * scale).toInt()
+                top = (y0 + translation.y * scale).toInt()
+            }
+            270f -> {
+                left = (y0 + translation.y * scale).toInt()
+                top = (x0 - translation.x * scale).toInt()
+            }
+            else -> {
+                left = (x0 - translation.x * scale).toInt()
+                top = (y0 - translation.y * scale).toInt()
+            }
+        }
+
+        return when (rotation == 90f || rotation == 270f) {
+            true -> Rect(left, top, left + cropHeight, top + cropWidth)
+            false -> Rect(left, top, left + cropWidth, top + cropHeight)
+        }
     }
 
     private fun getAvailableMemory(): Long = with(Runtime.getRuntime()) { maxMemory() - (totalMemory() - freeMemory()) }
