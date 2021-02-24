@@ -13,7 +13,6 @@ import android.content.Context
 import android.content.res.TypedArray
 import android.graphics.Bitmap
 import android.graphics.PointF
-import android.graphics.Rect
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.Gravity
@@ -117,7 +116,6 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     private var scaleFactor = 4f
     private var minScale = 1f
     private var maxScale = minScale * scaleFactor
-    private var previewScale = 1f
     private var previewWidth = 0
     private var previewHeight = 0
 
@@ -188,8 +186,13 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         return source.run {
             this ?: throw IllegalStateException("Image source must be set before applying crop.")
 
-            val rect = getCropRect(this)
-            getCroppedBitmap(rect)
+            getCroppedBitmap(
+                    previewWidth,
+                    overlayView.frameWidth,
+                    overlayView.frameHeight,
+                    translation,
+                    scale
+            )
         }
     }
 
@@ -216,18 +219,6 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         }
     }
 
-    private fun getCropRect(source: ImageSource<*>): Rect {
-        val relativeScale = previewScale / scale
-        val width = (overlayView.frameWidth * relativeScale).toInt()
-        val height = (overlayView.frameHeight * relativeScale).toInt()
-        val relativeLeft = (source.options.outWidth - width) / 2f
-        val relativeTop = (source.options.outHeight - height) / 2f
-        val left = (relativeLeft - translation.x * relativeScale).toInt()
-        val top = (relativeTop - translation.y * relativeScale).toInt()
-
-        return Rect(left, top, left + width, top + height)
-    }
-
     private fun getOverlayView(attr: TypedArray): CropOverlayView {
         return CropOverlayView(
                 context = context,
@@ -244,16 +235,15 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     private fun calculateScales() {
-        source?.options?.let { options ->
-            previewScale = options.outWidth / previewWidth.toFloat()
-            minScale = max(overlayView.frameWidth / previewWidth, overlayView.frameHeight / previewHeight)
-            maxScale = minScale * scaleFactor
-            scale = minScale
-            (imageView.layoutParams as LayoutParams).let {
-                it.gravity = Gravity.CENTER
-                it.height = previewHeight
-                it.width = previewWidth
-            }
+        source ?: return
+
+        minScale = max(overlayView.frameWidth / previewWidth, overlayView.frameHeight / previewHeight)
+        maxScale = minScale * scaleFactor
+        scale = minScale
+        (imageView.layoutParams as LayoutParams).let {
+            it.gravity = Gravity.CENTER
+            it.height = previewHeight
+            it.width = previewWidth
         }
     }
 

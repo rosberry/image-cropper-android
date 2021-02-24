@@ -5,9 +5,11 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
 import android.graphics.Matrix
+import android.graphics.PointF
 import android.graphics.Rect
 import android.net.Uri
 import android.provider.MediaStore
+import androidx.exifinterface.media.ExifInterface
 import java.io.InputStream
 import kotlin.math.max
 
@@ -18,8 +20,10 @@ internal class AssetSource(context: Context, private val fileName: String) : Ima
 
 internal class MediaSource(context: Context, private val uri: Uri) : ImageSource<Uri>(context) {
 
-    private val rotation: Float by lazy {
-        context.contentResolver.query(uri, arrayOf(MediaStore.Images.Media.ORIENTATION), null, null, null)
+    override val inputStream get() = context.contentResolver.openInputStream(uri)
+
+    override fun getRotation(inputStream: InputStream): Float {
+        return context.contentResolver.query(uri, arrayOf(MediaStore.Images.Media.ORIENTATION), null, null, null)
             ?.use {
                 return@use if (it.count != 1) {
                     0f
@@ -30,23 +34,6 @@ internal class MediaSource(context: Context, private val uri: Uri) : ImageSource
                 }
             } ?: 0f
     }
-
-    override val inputStream get() = context.contentResolver.openInputStream(uri)
-
-    override fun getPreviewBitmap(width: Int, height: Int): Bitmap? {
-        inputStream.use {
-            val source = BitmapFactory.decodeStream(it, null, getPreviewOptions(width, height, options))
-
-            if (source != null && rotation != 0f) {
-                val matrix = Matrix().apply { postRotate(rotation) }
-                val bitmap = Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
-
-                source.recycle()
-                return bitmap
-            }
-            return source
-        }
-    }
 }
 
 internal class ResourceSource(context: Context, private val resId: Int) : ImageSource<Int>(context) {
@@ -55,16 +42,35 @@ internal class ResourceSource(context: Context, private val resId: Int) : ImageS
 }
 
 sealed class ImageSource<T : Any>(protected val context: Context) {
-
-    val options by lazy { getDecodeOptions() }
+    val options by lazy {
+        BitmapFactory.Options()
+            .apply {
+                inJustDecodeBounds = true
+                inputStream.use { BitmapFactory.decodeStream(it, null, this) }
+            }
+    }
 
     protected abstract val inputStream: InputStream?
 
-    open fun getPreviewBitmap(width: Int, height: Int): Bitmap? {
-        return inputStream.use { BitmapFactory.decodeStream(it, null, getPreviewOptions(width, height, options)) }
+    protected open var rotation: Float = 0f
+
+    fun getPreviewBitmap(width: Int, height: Int): Bitmap? {
+        return inputStream.use {
+            var bitmap = BitmapFactory.decodeStream(it, null, getPreviewOptions(width, height, options)) ?: return@use null
+
+            rotation = it?.let { getRotation(it) } ?: 0f
+
+            if (rotation != 0f) {
+                val matrix = Matrix().apply { postRotate(rotation) }
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            }
+            return@use bitmap
+        }
     }
 
-    fun getCroppedBitmap(cropRect: Rect): Bitmap? {
+    fun getCroppedBitmap(previewWidth: Int, frameWidth: Float, frameHeight: Float, translation: PointF, imageScale: Float): Bitmap? {
+        val cropRect = getCropRect(previewWidth, frameWidth, frameHeight, translation, imageScale)
+
         inputStream.use {
             val options = getCropOptions(cropRect)
             val decoder = BitmapRegionDecoder.newInstance(it, false)
@@ -80,7 +86,16 @@ sealed class ImageSource<T : Any>(protected val context: Context) {
         }
     }
 
-    protected fun getPreviewOptions(width: Int, height: Int, options: BitmapFactory.Options): BitmapFactory.Options {
+    protected open fun getRotation(inputStream: InputStream): Float {
+        return when (ExifInterface(inputStream).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+            else -> 0f
+        }
+    }
+
+    private fun getPreviewOptions(width: Int, height: Int, options: BitmapFactory.Options): BitmapFactory.Options {
         val maxSize = max(width, height) * 2
         val maxImageDimen = max(options.outWidth, options.outHeight)
         val bitmapSize = options.getBitmapSize()
@@ -108,12 +123,18 @@ sealed class ImageSource<T : Any>(protected val context: Context) {
         return options
     }
 
-    private fun getDecodeOptions(): BitmapFactory.Options {
-        return BitmapFactory.Options()
-            .apply {
-                inJustDecodeBounds = true
-                inputStream.use { BitmapFactory.decodeStream(it, null, this) }
-            }
+    private fun getCropRect(previewWidth: Int, frameWidth: Float, frameHeight: Float, translation: PointF, imageScale: Float): Rect {
+        val imageWidth = if (rotation == 90f || rotation == 270f) options.outHeight else options.outWidth
+        val previewScale = imageWidth / previewWidth.toFloat()
+        val scale = previewScale / imageScale
+        val width = (frameWidth * scale).toInt()
+        val height = (frameHeight * scale).toInt()
+        val x0 = (options.outWidth - width) / 2f
+        val y0 = (options.outHeight - height) / 2f
+        val left = (x0 - translation.x * scale).toInt()
+        val top = (y0 - translation.y * scale).toInt()
+
+        return Rect(left, top, left + width, top + height)
     }
 
     private fun getAvailableMemory(): Long = with(Runtime.getRuntime()) { maxMemory() - (totalMemory() - freeMemory()) }
