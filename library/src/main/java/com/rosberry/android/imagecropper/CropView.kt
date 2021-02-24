@@ -194,10 +194,10 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
     }
 
     private fun setPreviewBitmap() {
-        val bitmap = source?.getPreviewBitmap(measuredWidth, measuredHeight)
+        val bitmap = source?.getPreviewBitmap(measuredWidth, measuredHeight) ?: throw IOException("Failed to load preview bitmap.")
 
         source?.options?.let { options ->
-            val ratio = options.outWidth / options.outHeight.toFloat()
+            val ratio = bitmap.width / bitmap.height.toFloat()
 
             if (ratio > 0) {
                 previewHeight = min(measuredHeight, options.outHeight)
