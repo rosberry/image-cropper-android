@@ -8,7 +8,6 @@ import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.Rect
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.exifinterface.media.ExifInterface
 import java.io.InputStream
 import kotlin.math.max
@@ -40,22 +39,33 @@ sealed class ImageSource<T : Any>(protected val context: Context) {
 
     protected abstract val inputStream: InputStream?
 
-    protected open val rotation by lazy {
-        inputStream?.use {
-            when (ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
-                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-                else -> 0f
+    protected open val orientation by lazy {
+        inputStream?.use { ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED) }
+    }
+
+    protected open val matrix by lazy {
+        Matrix().apply {
+            when (orientation) {
+                ExifInterface.ORIENTATION_TRANSPOSE,
+                ExifInterface.ORIENTATION_TRANSVERSE,
+                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> postScale(-1f, 1f)
+                ExifInterface.ORIENTATION_FLIP_VERTICAL -> postScale(1f, -1f)
             }
-        } ?: 0f
+            when (orientation) {
+                ExifInterface.ORIENTATION_TRANSVERSE,
+                ExifInterface.ORIENTATION_ROTATE_90 -> postRotate(90f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> postRotate(180f)
+                ExifInterface.ORIENTATION_TRANSPOSE,
+                ExifInterface.ORIENTATION_ROTATE_270 -> postRotate(270f)
+            }
+        }
     }
 
     fun getPreviewBitmap(width: Int, height: Int): Bitmap? {
         var bitmap = inputStream?.use { BitmapFactory.decodeStream(it, null, getPreviewOptions(width, height, options)) } ?: return null
 
-        if (rotation != 0f) {
-            bitmap = bitmap.rotate(rotation)
+        if (orientation != ExifInterface.ORIENTATION_NORMAL || orientation != ExifInterface.ORIENTATION_UNDEFINED) {
+            bitmap = bitmap.applyMatrix(matrix)
         }
         return bitmap
     }
@@ -77,8 +87,8 @@ sealed class ImageSource<T : Any>(protected val context: Context) {
             }
         } ?: return null
 
-        if (rotation != 0f) {
-            bitmap = bitmap.rotate(rotation)
+        if (orientation != ExifInterface.ORIENTATION_NORMAL || orientation != ExifInterface.ORIENTATION_UNDEFINED) {
+            bitmap = bitmap.applyMatrix(matrix)
         }
         return bitmap
     }
@@ -112,47 +122,56 @@ sealed class ImageSource<T : Any>(protected val context: Context) {
     }
 
     private fun getCropRect(previewWidth: Float, frameWidth: Float, frameHeight: Float, translation: PointF): Rect {
-        val left: Int
-        val top: Int
-
-        val imageWidth = if (rotation == 90f || rotation == 270f) options.outHeight else options.outWidth
-        val imageHeight = if (rotation == 90f || rotation == 270f) options.outWidth else options.outHeight
+        val imageWidth = when (orientation) {
+            ExifInterface.ORIENTATION_TRANSPOSE,
+            ExifInterface.ORIENTATION_TRANSVERSE,
+            ExifInterface.ORIENTATION_ROTATE_90,
+            ExifInterface.ORIENTATION_ROTATE_270 -> options.outHeight
+            else -> options.outWidth
+        }
+        val imageHeight = when (orientation) {
+            ExifInterface.ORIENTATION_TRANSPOSE,
+            ExifInterface.ORIENTATION_TRANSVERSE,
+            ExifInterface.ORIENTATION_ROTATE_90,
+            ExifInterface.ORIENTATION_ROTATE_270 -> options.outWidth
+            else -> options.outHeight
+        }
         val scale = imageWidth / previewWidth
         val cropWidth = (frameWidth * scale).toInt()
         val cropHeight = (frameHeight * scale).toInt()
         val x0 = (imageWidth - cropWidth) / 2f
         val y0 = (imageHeight - cropHeight) / 2f
+        val left: Int = when (orientation) {
+            ExifInterface.ORIENTATION_TRANSPOSE,
+            ExifInterface.ORIENTATION_ROTATE_90 -> y0 - translation.y * scale
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL,
+            ExifInterface.ORIENTATION_ROTATE_180 -> x0 + translation.x * scale
+            ExifInterface.ORIENTATION_TRANSVERSE,
+            ExifInterface.ORIENTATION_ROTATE_270 -> y0 + translation.y * scale
+            else -> x0 - translation.x * scale
+        }.toInt()
+        val top: Int = when (orientation) {
+            ExifInterface.ORIENTATION_TRANSVERSE,
+            ExifInterface.ORIENTATION_ROTATE_90 -> x0 + translation.x * scale
+            ExifInterface.ORIENTATION_FLIP_VERTICAL,
+            ExifInterface.ORIENTATION_ROTATE_180 -> y0 + translation.y * scale
+            ExifInterface.ORIENTATION_TRANSPOSE,
+            ExifInterface.ORIENTATION_ROTATE_270 -> x0 - translation.x * scale
+            else -> y0 - translation.y * scale
+        }.toInt()
 
-        when (rotation) {
-            90f -> {
-                left = (y0 - translation.y * scale).toInt()
-                top = (x0 + translation.x * scale).toInt()
-            }
-            180f -> {
-                left = (x0 + translation.x * scale).toInt()
-                top = (y0 + translation.y * scale).toInt()
-            }
-            270f -> {
-                left = (y0 + translation.y * scale).toInt()
-                top = (x0 - translation.x * scale).toInt()
-            }
-            else -> {
-                left = (x0 - translation.x * scale).toInt()
-                top = (y0 - translation.y * scale).toInt()
-            }
-        }
-
-        return when (rotation == 90f || rotation == 270f) {
-            true -> Rect(left, top, left + cropHeight, top + cropWidth)
-            false -> Rect(left, top, left + cropWidth, top + cropHeight)
+        return when (orientation) {
+            ExifInterface.ORIENTATION_TRANSPOSE,
+            ExifInterface.ORIENTATION_TRANSVERSE,
+            ExifInterface.ORIENTATION_ROTATE_90,
+            ExifInterface.ORIENTATION_ROTATE_270 -> Rect(left, top, left + cropHeight, top + cropWidth)
+            else -> Rect(left, top, left + cropWidth, top + cropHeight)
         }
     }
 
     private fun getAvailableMemory(): Long = with(Runtime.getRuntime()) { maxMemory() - (totalMemory() - freeMemory()) }
 
-    private fun Bitmap.rotate(rotation: Float): Bitmap {
-        val matrix = Matrix().apply { postRotate(rotation) }
-
+    private fun Bitmap.applyMatrix(matrix: Matrix): Bitmap {
         return Bitmap.createBitmap(this, 0, 0, this.width, this.height, matrix, true)
     }
 
