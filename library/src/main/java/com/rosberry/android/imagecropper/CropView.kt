@@ -190,7 +190,7 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
                     previewWidth * scale,
                     overlayView.frameWidth,
                     overlayView.frameHeight,
-                    translation
+                    getValidTranslation()
             )
         }
     }
@@ -256,6 +256,13 @@ class CropView(context: Context, attrs: AttributeSet) : FrameLayout(context, att
         if (checkTranslate) {
             fixImagePosition()
         }
+    }
+
+    private fun getValidTranslation(): PointF {
+        return PointF(
+                translation.x.closestInRange(xMin, xMax),
+                translation.y.closestInRange(yMin, yMax)
+        )
     }
 
     private fun fixImagePosition() {
