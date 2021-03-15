@@ -73,4 +73,4 @@ Check out our [open source projects](https://github.com/rosberry), read [our blo
 
 ## License
 
-Product Name is available under the MIT license. See the LICENSE file for more info.
+Image Cropper is available under the MIT license. See the LICENSE file for more info.
